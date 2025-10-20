@@ -6,10 +6,10 @@ var player_vigor_bar: ProgressBar
 var enemy_vigor_bar: ProgressBar
 var turn_indicator: Label
 var battlefield_display: HBoxContainer
-var slash_button: Button
+var attack_buttons: Array[Button] = []
+var attack_container: VBoxContainer
 var move_forward_button: Button
 var move_backward_button: Button
-var magic_bolt_button: Button
 var done_turn_button: Button
 
 func _ready():
@@ -67,36 +67,55 @@ func _build_ui():
 	battlefield_display.set_script(preload("res://src/ui/BattlefieldDisplay.gd"))
 	vbox.add_child(battlefield_display)
 
-	slash_button = Button.new()
-	slash_button.text = "Slash (Range 1)"
-	vbox.add_child(slash_button)
+	# Dynamic attack buttons container
+	attack_container = vbox
+	_rebuild_attack_buttons()
 
 	move_forward_button = Button.new()
 	move_forward_button.text = "Move Forward"
 	vbox.add_child(move_forward_button)
-	
+
 	move_backward_button = Button.new()
 	move_backward_button.text = "Move Backward"
 	vbox.add_child(move_backward_button)
-	
-	magic_bolt_button = Button.new()
-	magic_bolt_button.text = "Magic Bolt (Range 3-6)"
-	vbox.add_child(magic_bolt_button)
-	
+
 	done_turn_button = Button.new()
 	done_turn_button.text = "Done Turn"
 	vbox.add_child(done_turn_button)
 
 func _connect_signals():
-	slash_button.pressed.connect(_on_slash_pressed)
 	move_forward_button.pressed.connect(_on_move_forward_pressed)
 	move_backward_button.pressed.connect(_on_move_backward_pressed)
-	magic_bolt_button.pressed.connect(_on_magic_bolt_pressed)
 	done_turn_button.pressed.connect(_on_done_turn_pressed)
 	BattleStateStore.state_changed.connect(_on_state_changed)
 
-func _on_slash_pressed():
-	var action = AttackDatabase.get_action("slash")
+func _rebuild_attack_buttons():
+	# Clear existing attack buttons
+	for button in attack_buttons:
+		button.queue_free()
+	attack_buttons.clear()
+
+	# Get current entity's equipped attacks
+	var current_entity = CombatEngine._get_current_turn_entity()
+	var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % current_entity)
+
+	if equipped_attacks == null:
+		return
+
+	# Create button for each equipped attack
+	for action_id in equipped_attacks:
+		var action_data = AttackDatabase.get_action(action_id)
+		if action_data == null:
+			continue
+
+		var button = Button.new()
+		button.text = "%s (Range %d-%d)" % [action_data.action_name, action_data.min_range, action_data.max_range]
+		button.pressed.connect(_on_attack_button_pressed.bind(action_id))
+		attack_container.add_child(button)
+		attack_buttons.append(button)
+
+func _on_attack_button_pressed(action_id: String):
+	var action = AttackDatabase.get_action(action_id)
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var target = "enemy" if current_entity == "player" else "player"
 	CombatEngine.execute_move(action, current_entity, target)
@@ -111,16 +130,13 @@ func _on_move_backward_pressed():
 	var current_entity = CombatEngine._get_current_turn_entity()
 	CombatEngine.execute_move(action, current_entity, current_entity)
 
-func _on_magic_bolt_pressed():
-	var action = AttackDatabase.get_action("magic_bolt")
-	var current_entity = CombatEngine._get_current_turn_entity()
-	var target = "enemy" if current_entity == "player" else "player"
-	CombatEngine.execute_move(action, current_entity, target)
-
 func _on_done_turn_pressed():
 	CombatEngine.end_turn()
 
 func _on_state_changed(_property_path: String, _old_value, _new_value):
+	# Rebuild attack buttons if turn changed
+	if _property_path.ends_with("current_turn"):
+		_rebuild_attack_buttons()
 	_update_button_states()
 
 func _update_button_states():
@@ -128,10 +144,17 @@ func _update_button_states():
 	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % current_entity)
 	var target = "enemy" if current_entity == "player" else "player"
 
-	slash_button.disabled = not _can_use_action("slash", current_entity, target)
+	# Update dynamic attack buttons
+	var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % current_entity)
+	if equipped_attacks != null:
+		for i in range(attack_buttons.size()):
+			if i < equipped_attacks.size():
+				var action_id = equipped_attacks[i]
+				attack_buttons[i].disabled = not _can_use_action(action_id, current_entity, target)
+
+	# Update movement buttons
 	move_forward_button.disabled = current_vigor < 1
 	move_backward_button.disabled = current_vigor < 1
-	magic_bolt_button.disabled = not _can_use_action("magic_bolt", current_entity, target)
 
 func _can_use_action(action_id: String, caster: String, target: String) -> bool:
 	var action = AttackDatabase.get_action(action_id)
