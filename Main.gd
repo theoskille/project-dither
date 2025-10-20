@@ -9,6 +9,7 @@ var enemy_vigor_bar: ProgressBar
 var turn_indicator: Label
 var battlefield_display: HBoxContainer
 var attack_button: Button
+var slash_button: Button
 var move_forward_button: Button
 var move_backward_button: Button
 var magic_bolt_button: Button
@@ -72,7 +73,11 @@ func _build_ui():
 	attack_button = Button.new()
 	attack_button.text = "Attack Enemy"
 	vbox.add_child(attack_button)
-	
+
+	slash_button = Button.new()
+	slash_button.text = "Slash (Range 1)"
+	vbox.add_child(slash_button)
+
 	move_forward_button = Button.new()
 	move_forward_button.text = "Move Forward"
 	vbox.add_child(move_forward_button)
@@ -91,6 +96,7 @@ func _build_ui():
 
 func _connect_signals():
 	attack_button.pressed.connect(_on_attack_pressed)
+	slash_button.pressed.connect(_on_slash_pressed)
 	move_forward_button.pressed.connect(_on_move_forward_pressed)
 	move_backward_button.pressed.connect(_on_move_backward_pressed)
 	magic_bolt_button.pressed.connect(_on_magic_bolt_pressed)
@@ -106,7 +112,21 @@ func _on_attack_pressed():
 	action.str_modifier = 1.0
 	action.min_range = 0
 	action.max_range = 1
-	
+
+	var current_entity = CombatEngine._get_current_turn_entity()
+	var target = "enemy" if current_entity == "player" else "player"
+	CombatEngine.execute_move(action, current_entity, target)
+
+func _on_slash_pressed():
+	var action = ActionData.new()
+	action.action_id = "slash"
+	action.action_name = "Slash"
+	action.vigor_cost = 1
+	action.base_damage = 5
+	action.str_modifier = 1.5
+	action.min_range = 1
+	action.max_range = 1
+
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var target = "enemy" if current_entity == "player" else "player"
 	CombatEngine.execute_move(action, current_entity, target)
@@ -155,8 +175,9 @@ func _update_button_states():
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % current_entity)
 	var target = "enemy" if current_entity == "player" else "player"
-	
+
 	attack_button.disabled = not _can_use_action("basic_attack", current_entity, target)
+	slash_button.disabled = not _can_use_action("slash", current_entity, target)
 	move_forward_button.disabled = current_vigor < 1
 	move_backward_button.disabled = current_vigor < 1
 	magic_bolt_button.disabled = not _can_use_action("magic_bolt", current_entity, target)
@@ -169,11 +190,17 @@ func _can_use_action(action_id: String, caster: String, target: String) -> bool:
 		action.str_modifier = 1.0
 		action.min_range = 0
 		action.max_range = 1
+	elif action_id == "slash":
+		action.vigor_cost = 1
+		action.base_damage = 5
+		action.str_modifier = 1.5
+		action.min_range = 1
+		action.max_range = 1
 	elif action_id == "magic_bolt":
 		action.vigor_cost = 1
 		action.base_damage = 8
 		action.int_modifier = 1.5
 		action.min_range = 3
 		action.max_range = 6
-	
+
 	return CombatEngine.can_execute_action(action, caster, target)
