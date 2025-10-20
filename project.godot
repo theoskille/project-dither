@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+AttackDatabase="*res://src/data/AttackDatabase.gd"
 BattleStateStore="*res://src/store/BattleStateStore.gd"
 BattleStateMutations="*res://src/mutations/BattleStateMutations.gd"
 CombatEngine="*res://src/engine/CombatEngine.gd"

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_slash"]
+
+[resource]
+script = ExtResource("1_slash")
+action_id = "slash"
+action_name = "Slash"
+vigor_cost = 1
+base_damage = 5
+str_modifier = 1.5
+dex_modifier = 0.0
+int_modifier = 0.0
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 1
+max_range = 1
+move_caster = 0
+status_effect = {}

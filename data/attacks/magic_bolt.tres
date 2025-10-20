@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_magic"]
+
+[resource]
+script = ExtResource("1_magic")
+action_id = "magic_bolt"
+action_name = "Magic Bolt"
+vigor_cost = 1
+base_damage = 8
+str_modifier = 0.0
+dex_modifier = 0.0
+int_modifier = 1.5
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 3
+max_range = 6
+move_caster = 0
+status_effect = {}
