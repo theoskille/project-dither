@@ -72,7 +72,6 @@ func start_turn(entity: String):
 
 func end_turn():
 	process_turn_end()
-	BattleStateMutations.advance_turn()
 	var next_entity = _get_current_turn_entity()
 	start_turn(next_entity)
 
