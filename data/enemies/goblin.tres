@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_goblin"]
+
+[resource]
+script = ExtResource("1_goblin")
+enemy_id = "goblin"
+enemy_name = "Goblin"
+max_hp = 50
+max_vigor = 3
+base_stats = {
+"con": 8,
+"dex": 12,
+"int": 6,
+"luck": 8,
+"spd": 10,
+"str": 9
+}
+equipped_attacks = Array[String](["slash", "move_forward"])

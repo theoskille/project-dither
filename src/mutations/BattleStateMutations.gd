@@ -55,3 +55,27 @@ func set_entity_position(entity: String, new_position: int):
 	var old_position = BattleStateStore.get_state_value("%s_state.position" % entity)
 	BattleStateStore.battle_state.get("%s_state" % entity).position = new_position
 	BattleStateStore._emit_change("%s_state.position" % entity, old_position, new_position)
+
+func initialize_entity_from_enemy_data(entity: String, enemy_data: EnemyData, position: int):
+	var entity_state = BattleStateStore.battle_state.get("%s_state" % entity)
+
+	entity_state.max_hp = enemy_data.max_hp
+	entity_state.current_hp = enemy_data.max_hp
+	entity_state.max_vigor = enemy_data.max_vigor
+	entity_state.current_vigor = enemy_data.max_vigor
+	entity_state.base_stats = enemy_data.base_stats.duplicate()
+	entity_state.equipped_attacks = enemy_data.equipped_attacks.duplicate()
+	entity_state.position = position
+
+	# Clear active effects using a properly typed array
+	var empty_effects: Array[EffectState] = []
+	entity_state.active_effects = empty_effects
+
+	# Emit signals for all changed properties
+	BattleStateStore._emit_change("%s_state.max_hp" % entity, null, enemy_data.max_hp)
+	BattleStateStore._emit_change("%s_state.current_hp" % entity, null, enemy_data.max_hp)
+	BattleStateStore._emit_change("%s_state.max_vigor" % entity, null, enemy_data.max_vigor)
+	BattleStateStore._emit_change("%s_state.current_vigor" % entity, null, enemy_data.max_vigor)
+	BattleStateStore._emit_change("%s_state.base_stats" % entity, null, enemy_data.base_stats)
+	BattleStateStore._emit_change("%s_state.equipped_attacks" % entity, null, enemy_data.equipped_attacks)
+	BattleStateStore._emit_change("%s_state.position" % entity, null, position)

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_orc"]
+
+[resource]
+script = ExtResource("1_orc")
+enemy_id = "orc"
+enemy_name = "Orc Warrior"
+max_hp = 80
+max_vigor = 3
+base_stats = {
+"con": 14,
+"dex": 8,
+"int": 5,
+"luck": 7,
+"spd": 7,
+"str": 15
+}
+equipped_attacks = Array[String](["slash", "magic_bolt"])

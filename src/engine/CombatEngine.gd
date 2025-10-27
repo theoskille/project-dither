@@ -1,5 +1,14 @@
 extends Node
 
+func initialize_enemy(enemy_id: String, position: int = 5):
+	var enemy_data = EnemyDatabase.get_enemy(enemy_id)
+	if enemy_data == null:
+		push_error("CombatEngine: Cannot initialize enemy - enemy_id '%s' not found" % enemy_id)
+		return
+
+	BattleStateMutations.initialize_entity_from_enemy_data("enemy", enemy_data, position)
+	print("CombatEngine: Initialized enemy '%s' at position %d" % [enemy_data.enemy_name, position])
+
 func execute_move(action_data: ActionData, caster: String, target: String) -> bool:
 	if not can_execute_action(action_data, caster, target):
 		return false
