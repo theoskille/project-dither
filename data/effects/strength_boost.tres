@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EffectData.gd" id="1_strength_boost"]
+
+[resource]
+script = ExtResource("1_strength_boost")
+effect_id = "strength_boost"
+effect_name = "Mighty"
+description = "Greatly increases strength"
+base_duration = 4
+str_modifier = 5
+dex_modifier = 0
+int_modifier = 0
+con_modifier = 0
+spd_modifier = 0
+luck_modifier = 0
+percent_str_modifier = 20
+percent_dex_modifier = 0
+percent_int_modifier = 0
+percent_con_modifier = 0
+percent_spd_modifier = 0
+percent_luck_modifier = 0
+base_damage_per_turn = 0
+blocks_all_actions = false
+blocks_action_types = []

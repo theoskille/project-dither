@@ -3,6 +3,7 @@ extends Resource
 
 @export var action_id: String = ""
 @export var action_name: String = ""
+@export var action_type: String = "attack"  # "attack", "movement", "magic", "special"
 @export var vigor_cost: int = 1
 @export var base_damage: int = 0
 @export var str_modifier: float = 0.0
@@ -14,4 +15,5 @@ extends Resource
 @export var min_range: int = 0
 @export var max_range: int = 999
 @export var move_caster: int = 0
-@export var status_effect: Dictionary = {}
+@export var applies_effect_id: String = ""
+@export var effect_duration_override: int = 0  # 0 = use effect template's base_duration

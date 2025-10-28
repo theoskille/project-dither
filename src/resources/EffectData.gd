@@ -1,8 +1,10 @@
-class_name EffectState
+class_name EffectData
 extends Resource
 
 @export var effect_id: String = ""
-@export var remaining_duration: int = 0
+@export var effect_name: String = ""
+@export var description: String = ""
+@export var base_duration: int = 3
 
 # Flat stat modifiers
 @export var str_modifier: int = 0
@@ -21,7 +23,7 @@ extends Resource
 @export var percent_luck_modifier: int = 0
 
 # Damage over time
-@export var damage_per_turn: int = 0
+@export var base_damage_per_turn: int = 0
 
 # Action blocking
 @export var blocks_all_actions: bool = false

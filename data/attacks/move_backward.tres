@@ -6,6 +6,7 @@
 script = ExtResource("1_backward")
 action_id = "move_backward"
 action_name = "Move Backward"
+action_type = "movement"
 vigor_cost = 1
 base_damage = 0
 str_modifier = 0.0
@@ -17,4 +18,5 @@ luck_modifier = 0.0
 min_range = 0
 max_range = 999
 move_caster = -1
-status_effect = {}
+applies_effect_id = ""
+effect_duration_override = 0

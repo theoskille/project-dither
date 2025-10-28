@@ -31,9 +31,8 @@ func _perform_action(action_data: ActionData, caster: String, target: String) ->
 		var new_pos = max(0, current_pos + action_data.move_caster)
 		BattleStateMutations.set_entity_position(caster, new_pos)
 	
-	if not action_data.status_effect.is_empty():
-		var effect = _create_effect_from_data(action_data.status_effect)
-		BattleStateMutations.add_effect_to_entity(target, effect)
+	if action_data.applies_effect_id != "":
+		_apply_effect_to_entity(target, action_data.applies_effect_id, action_data.effect_duration_override)
 	
 	return true
 
@@ -48,9 +47,12 @@ func _perform_action_legacy(move_data: Dictionary, caster: String, target: Strin
 		var new_pos = max(0, current_pos + move_data.move_caster)
 		BattleStateMutations.set_entity_position(caster, new_pos)
 	
-	if move_data.has("status_effect"):
-		var effect = _create_effect_from_data(move_data.status_effect)
-		BattleStateMutations.add_effect_to_entity(target, effect)
+	if move_data.has("status_effect") and not move_data.status_effect.is_empty():
+		# Legacy Dictionary-based effect application
+		var effect_id = move_data.status_effect.get("id", "")
+		if effect_id != "":
+			var duration = move_data.status_effect.get("duration", 0)
+			_apply_effect_to_entity(target, effect_id, duration)
 	
 	return true
 
@@ -64,15 +66,19 @@ func process_turn_end():
 func can_execute_action(action_data: ActionData, caster: String, target: String) -> bool:
 	if not _is_entity_turn(caster):
 		return false
-	
+
+	# Check if caster is blocked by status effects
+	if _is_action_blocked_by_effects(caster, action_data.action_type):
+		return false
+
 	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % caster)
 	if current_vigor < action_data.vigor_cost:
 		return false
-	
+
 	var distance = _get_distance_between_entities(caster, target)
 	if distance < action_data.min_range or distance > action_data.max_range:
 		return false
-	
+
 	return true
 
 func start_turn(entity: String):
@@ -97,6 +103,22 @@ func _get_distance_between_entities(entity1: String, entity2: String) -> int:
 	var pos1 = BattleStateStore.get_state_value("%s_state.position" % entity1)
 	var pos2 = BattleStateStore.get_state_value("%s_state.position" % entity2)
 	return abs(pos1 - pos2)
+
+func _is_action_blocked_by_effects(entity: String, action_type: String) -> bool:
+	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
+
+	for effect in effects:
+		# Check if effect blocks all actions
+		if effect.blocks_all_actions:
+			print("CombatEngine: %s cannot act - blocked by '%s'" % [entity, effect.effect_id])
+			return true
+
+		# Check if effect blocks this specific action type
+		if action_type in effect.blocks_action_types:
+			print("CombatEngine: %s cannot perform '%s' action - blocked by '%s'" % [entity, action_type, effect.effect_id])
+			return true
+
+	return false
 
 func _calculate_damage_from_action(action_data: ActionData, caster: String) -> int:
 	var total_damage = action_data.base_damage
@@ -124,22 +146,58 @@ func _calculate_damage(move_data: Dictionary, caster: String) -> int:
 
 func _get_total_stat_modifier(entity: String, stat: String) -> int:
 	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	var total_modifier = 0
-	
-	for effect in effects:
-		total_modifier += effect.get("%s_modifier" % stat, 0)
-	
-	return total_modifier
+	var base_stat = BattleStateStore.get_state_value("%s_state.base_stats.%s" % [entity, stat])
 
-func _create_effect_from_data(effect_data: Dictionary) -> EffectState:
+	var flat_modifier = 0
+	var percent_modifier = 0
+
+	for effect in effects:
+		flat_modifier += effect.get("%s_modifier" % stat, 0)
+		percent_modifier += effect.get("percent_%s_modifier" % stat, 0)
+
+	# Apply formula: (base_stat + flat_mods) * (1.0 + percent_mods/100.0) - base_stat
+	var modified_stat = (base_stat + flat_modifier) * (1.0 + percent_modifier / 100.0)
+	return int(modified_stat) - base_stat
+
+func _apply_effect_to_entity(entity: String, effect_id: String, duration_override: int = 0):
+	var effect_template = EffectDatabase.get_effect(effect_id)
+	if effect_template == null:
+		push_error("CombatEngine: Cannot apply effect - effect_id '%s' not found" % effect_id)
+		return
+
+	# Check if effect already exists (no stacking - refresh duration instead)
+	var existing_effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
+	for i in range(existing_effects.size()):
+		if existing_effects[i].effect_id == effect_id:
+			# Refresh duration
+			var new_duration = duration_override if duration_override > 0 else effect_template.base_duration
+			existing_effects[i].remaining_duration = new_duration
+			BattleStateStore._emit_change("%s_state.active_effects" % entity, null, existing_effects)
+			print("CombatEngine: Refreshed effect '%s' on %s (duration: %d)" % [effect_id, entity, new_duration])
+			return
+
+	# Create new effect instance from template
 	var effect = EffectState.new()
-	effect.effect_id = effect_data.get("id", "")
-	effect.remaining_duration = effect_data.get("duration", 0)
-	effect.damage_per_turn = effect_data.get("damage_per_turn", 0)
-	effect.str_modifier = effect_data.get("str_modifier", 0)
-	effect.dex_modifier = effect_data.get("dex_modifier", 0)
-	effect.movement_blocked = effect_data.get("movement_blocked", false)
-	return effect
+	effect.effect_id = effect_template.effect_id
+	effect.remaining_duration = duration_override if duration_override > 0 else effect_template.base_duration
+	effect.str_modifier = effect_template.str_modifier
+	effect.dex_modifier = effect_template.dex_modifier
+	effect.int_modifier = effect_template.int_modifier
+	effect.con_modifier = effect_template.con_modifier
+	effect.spd_modifier = effect_template.spd_modifier
+	effect.luck_modifier = effect_template.luck_modifier
+	effect.percent_str_modifier = effect_template.percent_str_modifier
+	effect.percent_dex_modifier = effect_template.percent_dex_modifier
+	effect.percent_int_modifier = effect_template.percent_int_modifier
+	effect.percent_con_modifier = effect_template.percent_con_modifier
+	effect.percent_spd_modifier = effect_template.percent_spd_modifier
+	effect.percent_luck_modifier = effect_template.percent_luck_modifier
+	effect.damage_per_turn = effect_template.base_damage_per_turn
+	effect.blocks_all_actions = effect_template.blocks_all_actions
+	effect.blocks_action_types = effect_template.blocks_action_types.duplicate()
+
+	BattleStateMutations.add_effect_to_entity(entity, effect)
+	print("CombatEngine: Applied effect '%s' to %s (duration: %d)" % [effect_id, entity, effect.remaining_duration])
 
 func _process_damage_over_time():
 	for entity in ["player", "enemy"]:
