@@ -152,8 +152,8 @@ func _get_total_stat_modifier(entity: String, stat: String) -> int:
 	var percent_modifier = 0
 
 	for effect in effects:
-		flat_modifier += effect.get("%s_modifier" % stat, 0)
-		percent_modifier += effect.get("percent_%s_modifier" % stat, 0)
+		flat_modifier += effect.get("%s_modifier" % stat)
+		percent_modifier += effect.get("percent_%s_modifier" % stat)
 
 	# Apply formula: (base_stat + flat_mods) * (1.0 + percent_mods/100.0) - base_stat
 	var modified_stat = (base_stat + flat_modifier) * (1.0 + percent_modifier / 100.0)
@@ -213,9 +213,11 @@ func _process_damage_over_time():
 
 func _decrement_effect_durations():
 	for entity in ["player", "enemy"]:
+		# Decrement all durations via mutation layer
+		BattleStateMutations.decrement_effect_durations(entity)
+
+		# Remove expired effects (must check after decrement)
 		var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-		
 		for i in range(effects.size() - 1, -1, -1):
-			effects[i].remaining_duration -= 1
 			if effects[i].remaining_duration <= 0:
 				BattleStateMutations.remove_effect_from_entity(entity, i)

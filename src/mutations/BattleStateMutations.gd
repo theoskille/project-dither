@@ -56,6 +56,16 @@ func set_entity_position(entity: String, new_position: int):
 	BattleStateStore.battle_state.get("%s_state" % entity).position = new_position
 	BattleStateStore._emit_change("%s_state.position" % entity, old_position, new_position)
 
+func decrement_effect_durations(entity: String):
+	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
+	var old_effects = effects  # Capture for signal
+
+	for effect in effects:
+		effect.remaining_duration -= 1
+
+	# Emit signal so UI updates
+	BattleStateStore._emit_change("%s_state.active_effects" % entity, old_effects, effects)
+
 func initialize_entity_from_enemy_data(entity: String, enemy_data: EnemyData, position: int):
 	var entity_state = BattleStateStore.battle_state.get("%s_state" % entity)
 

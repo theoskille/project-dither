@@ -62,6 +62,35 @@ func _build_ui():
 	enemy_stats_panel.custom_minimum_size = Vector2(200, 0)
 	middle_hbox.add_child(enemy_stats_panel)
 
+	# Spacer between stats and effects
+	var stats_effects_spacer = Control.new()
+	stats_effects_spacer.custom_minimum_size = Vector2(0, 20)
+	main_vbox.add_child(stats_effects_spacer)
+
+	# Effects panels section (below stats)
+	var effects_hbox = HBoxContainer.new()
+	effects_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_vbox.add_child(effects_hbox)
+
+	# Player effects panel (left)
+	var player_effects_panel = VBoxContainer.new()
+	player_effects_panel.set_script(preload("res://src/ui/EntityEffectsPanel.gd"))
+	player_effects_panel.entity_name = "player"
+	player_effects_panel.custom_minimum_size = Vector2(200, 0)
+	effects_hbox.add_child(player_effects_panel)
+
+	# Spacer (center, matching battlefield width)
+	var effects_center_spacer = Control.new()
+	effects_center_spacer.custom_minimum_size = Vector2(180, 0)
+	effects_hbox.add_child(effects_center_spacer)
+
+	# Enemy effects panel (right)
+	var enemy_effects_panel = VBoxContainer.new()
+	enemy_effects_panel.set_script(preload("res://src/ui/EntityEffectsPanel.gd"))
+	enemy_effects_panel.entity_name = "enemy"
+	enemy_effects_panel.custom_minimum_size = Vector2(200, 0)
+	effects_hbox.add_child(enemy_effects_panel)
+
 	# Spacer before action panels
 	var bottom_spacer = Control.new()
 	bottom_spacer.custom_minimum_size = Vector2(0, 30)
