@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_dash"]
+
+[resource]
+script = ExtResource("1_dash")
+action_id = "dash"
+action_name = "Dash"
+action_type = "movement"
+vigor_cost = 1
+base_damage = 0
+str_modifier = 0.0
+dex_modifier = 0.0
+int_modifier = 0.0
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 0
+max_range = 999
+move_caster = 3
+move_target = 0
+applies_effect_id = ""
+effect_duration_override = 0

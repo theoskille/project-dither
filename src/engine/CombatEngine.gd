@@ -21,39 +21,65 @@ func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
 
 func _perform_action(action_data: ActionData, caster: String, target: String) -> bool:
 	var damage = _calculate_damage_from_action(action_data, caster)
-	
+
 	if damage > 0:
 		var current_hp = BattleStateStore.get_state_value("%s_state.current_hp" % target)
 		BattleStateMutations.set_entity_hp(target, max(0, current_hp - damage))
-	
+
+	# Get battlefield size for boundary clamping
+	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
+
+	# Move caster if specified
 	if action_data.move_caster != 0:
 		var current_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
-		var new_pos = max(0, current_pos + action_data.move_caster)
+		var new_pos = clamp(current_pos + action_data.move_caster, 0, max_position)
 		BattleStateMutations.set_entity_position(caster, new_pos)
-	
+
+	# Move target if specified (relative to caster position)
+	if action_data.move_target != 0:
+		var caster_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
+		var target_pos = BattleStateStore.get_state_value("%s_state.position" % target)
+
+		# Calculate direction: positive if target is to the right, negative if to the left
+		var direction = sign(target_pos - caster_pos)
+
+		# Apply relative movement: positive move_target = away from caster, negative = toward caster
+		var new_pos = clamp(target_pos + (action_data.move_target * direction), 0, max_position)
+		BattleStateMutations.set_entity_position(target, new_pos)
+
 	if action_data.applies_effect_id != "":
 		_apply_effect_to_entity(target, action_data.applies_effect_id, action_data.effect_duration_override)
-	
+
 	return true
 
 func _perform_action_legacy(move_data: Dictionary, caster: String, target: String) -> bool:
 	var damage = _calculate_damage(move_data, caster)
-	
+
 	var current_hp = BattleStateStore.get_state_value("%s_state.current_hp" % target)
 	BattleStateMutations.set_entity_hp(target, max(0, current_hp - damage))
-	
+
+	# Get battlefield size for boundary clamping
+	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
+
 	if move_data.has("move_caster"):
 		var current_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
-		var new_pos = max(0, current_pos + move_data.move_caster)
+		var new_pos = clamp(current_pos + move_data.move_caster, 0, max_position)
 		BattleStateMutations.set_entity_position(caster, new_pos)
-	
+
+	if move_data.has("move_target"):
+		var caster_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
+		var target_pos = BattleStateStore.get_state_value("%s_state.position" % target)
+		var direction = sign(target_pos - caster_pos)
+		var new_pos = clamp(target_pos + (move_data.move_target * direction), 0, max_position)
+		BattleStateMutations.set_entity_position(target, new_pos)
+
 	if move_data.has("status_effect") and not move_data.status_effect.is_empty():
 		# Legacy Dictionary-based effect application
 		var effect_id = move_data.status_effect.get("id", "")
 		if effect_id != "":
 			var duration = move_data.status_effect.get("duration", 0)
 			_apply_effect_to_entity(target, effect_id, duration)
-	
+
 	return true
 
 func process_turn_end():

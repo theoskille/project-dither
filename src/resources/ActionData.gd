@@ -15,5 +15,6 @@ extends Resource
 @export var min_range: int = 0
 @export var max_range: int = 999
 @export var move_caster: int = 0
+@export var move_target: int = 0
 @export var applies_effect_id: String = ""
 @export var effect_duration_override: int = 0  # 0 = use effect template's base_duration

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_knockback"]
+
+[resource]
+script = ExtResource("1_knockback")
+action_id = "knockback_strike"
+action_name = "Knockback Strike"
+action_type = "attack"
+vigor_cost = 1 
+base_damage = 12
+str_modifier = 2.0
+dex_modifier = 0.0
+int_modifier = 0.0
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 1
+max_range = 1
+move_caster = 0
+move_target = 2
+applies_effect_id = ""
+effect_duration_override = 0
