@@ -50,8 +50,14 @@ func _on_state_changed(property_path: String, _old_value, _new_value):
 	if property_path == "%s_state.equipped_attacks" % entity_name:
 		_rebuild_action_buttons()
 
-	# Update button states when turn changes or vigor changes
-	if property_path.ends_with("current_turn_index") or property_path == "%s_state.current_vigor" % entity_name:
+	# Determine target entity
+	var target = "enemy" if entity_name == "player" else "player"
+
+	# Update button states when turn changes, vigor changes, or positions change
+	if (property_path.ends_with("current_turn_index") or
+		property_path == "%s_state.current_vigor" % entity_name or
+		property_path == "%s_state.position" % entity_name or
+		property_path == "%s_state.position" % target):
 		_update_buttons()
 
 func _rebuild_action_buttons():
