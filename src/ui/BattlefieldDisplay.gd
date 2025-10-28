@@ -1,4 +1,4 @@
-extends Control
+extends VBoxContainer
 
 @onready var position_labels = []
 
@@ -16,6 +16,7 @@ func _setup_position_labels():
 	for i in range(total_tiles):
 		var label = Label.new()
 		label.text = "[ ]"
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		add_child(label)
 		position_labels.append(label)
 

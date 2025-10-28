@@ -59,6 +59,7 @@ func set_entity_position(entity: String, new_position: int):
 func initialize_entity_from_enemy_data(entity: String, enemy_data: EnemyData, position: int):
 	var entity_state = BattleStateStore.battle_state.get("%s_state" % entity)
 
+	entity_state.name = enemy_data.enemy_name
 	entity_state.max_hp = enemy_data.max_hp
 	entity_state.current_hp = enemy_data.max_hp
 	entity_state.max_vigor = enemy_data.max_vigor

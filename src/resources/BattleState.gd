@@ -11,6 +11,7 @@ func _init():
 		battlefield = BattlefieldLayout.new()
 	if not player_state:
 		player_state = EntityState.new()
+		player_state.name = "Player"
 		player_state.position = 0
 	if not enemy_state:
 		enemy_state = EntityState.new()

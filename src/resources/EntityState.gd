@@ -1,6 +1,7 @@
 class_name EntityState
 extends Resource
 
+@export var name: String = ""
 @export var max_hp: int = 100
 @export var current_hp: int = 100
 @export var max_vigor: int = 3

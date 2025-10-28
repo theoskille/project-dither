@@ -1,13 +1,11 @@
 extends Control
 
-var player_health_bar: ProgressBar
-var enemy_health_bar: ProgressBar
-var player_vigor_bar: ProgressBar
-var enemy_vigor_bar: ProgressBar
+var player_stats_panel: VBoxContainer
+var enemy_stats_panel: VBoxContainer
 var turn_indicator: Label
-var battlefield_display: HBoxContainer
+var battlefield_display: VBoxContainer
 var attack_buttons: Array[Button] = []
-var attack_container: VBoxContainer
+var attack_container: HBoxContainer
 var move_forward_button: Button
 var move_backward_button: Button
 var done_turn_button: Button
@@ -17,71 +15,89 @@ func _ready():
 	_connect_signals()
 
 func _build_ui():
-	var vbox = VBoxContainer.new()
-	add_child(vbox)
-	
+	# Main vertical container
+	var main_vbox = VBoxContainer.new()
+	add_child(main_vbox)
+
+	# Turn indicator at top (full width)
 	turn_indicator = Label.new()
 	turn_indicator.set_script(preload("res://src/ui/TurnIndicator.gd"))
-	vbox.add_child(turn_indicator)
-	
-	vbox.add_child(Label.new())
-	vbox.get_child(-1).text = "Player Health:"
-	
-	player_health_bar = ProgressBar.new()
-	player_health_bar.set_script(preload("res://src/ui/HealthBar.gd"))
-	player_health_bar.entity_name = "player"
-	player_health_bar.value = 100
-	vbox.add_child(player_health_bar)
-	
-	vbox.add_child(Label.new())
-	vbox.get_child(-1).text = "Player Vigor:"
-	
-	player_vigor_bar = ProgressBar.new()
-	player_vigor_bar.set_script(preload("res://src/ui/VigorBar.gd"))
-	player_vigor_bar.entity_name = "player"
-	player_vigor_bar.value = 3
-	vbox.add_child(player_vigor_bar)
-	
-	vbox.add_child(Label.new())
-	vbox.get_child(-1).text = "Enemy Health:"
-	
-	enemy_health_bar = ProgressBar.new()
-	enemy_health_bar.set_script(preload("res://src/ui/HealthBar.gd"))
-	enemy_health_bar.entity_name = "enemy"
-	enemy_health_bar.value = 100
-	vbox.add_child(enemy_health_bar)
-	
-	vbox.add_child(Label.new())
-	vbox.get_child(-1).text = "Enemy Vigor:"
-	
-	enemy_vigor_bar = ProgressBar.new()
-	enemy_vigor_bar.set_script(preload("res://src/ui/VigorBar.gd"))
-	enemy_vigor_bar.entity_name = "enemy"
-	enemy_vigor_bar.value = 3
-	vbox.add_child(enemy_vigor_bar)
-	
-	vbox.add_child(Label.new())
-	vbox.get_child(-1).text = "Battlefield:"
-	
-	battlefield_display = HBoxContainer.new()
-	battlefield_display.set_script(preload("res://src/ui/BattlefieldDisplay.gd"))
-	vbox.add_child(battlefield_display)
+	turn_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	main_vbox.add_child(turn_indicator)
 
-	# Dynamic attack buttons container
-	attack_container = vbox
+	# Spacer
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 20)
+	main_vbox.add_child(spacer)
+
+	# Middle section: Player Stats | Battlefield | Enemy Stats
+	var middle_hbox = HBoxContainer.new()
+	middle_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_vbox.add_child(middle_hbox)
+
+	# Player stats panel (left)
+	player_stats_panel = VBoxContainer.new()
+	player_stats_panel.set_script(preload("res://src/ui/EntityStatsPanel.gd"))
+	player_stats_panel.entity_name = "player"
+	player_stats_panel.custom_minimum_size = Vector2(200, 0)
+	middle_hbox.add_child(player_stats_panel)
+
+	# Spacer
+	var center_spacer = Control.new()
+	center_spacer.custom_minimum_size = Vector2(40, 0)
+	middle_hbox.add_child(center_spacer)
+
+	# Battlefield display (center)
+	battlefield_display = VBoxContainer.new()
+	battlefield_display.set_script(preload("res://src/ui/BattlefieldDisplay.gd"))
+	battlefield_display.custom_minimum_size = Vector2(100, 0)
+	middle_hbox.add_child(battlefield_display)
+
+	# Spacer
+	var right_spacer = Control.new()
+	right_spacer.custom_minimum_size = Vector2(40, 0)
+	middle_hbox.add_child(right_spacer)
+
+	# Enemy stats panel (right)
+	enemy_stats_panel = VBoxContainer.new()
+	enemy_stats_panel.set_script(preload("res://src/ui/EntityStatsPanel.gd"))
+	enemy_stats_panel.entity_name = "enemy"
+	enemy_stats_panel.custom_minimum_size = Vector2(200, 0)
+	middle_hbox.add_child(enemy_stats_panel)
+
+	# Spacer before controls
+	var bottom_spacer = Control.new()
+	bottom_spacer.custom_minimum_size = Vector2(0, 30)
+	main_vbox.add_child(bottom_spacer)
+
+	# Controls section at bottom
+	var controls_vbox = VBoxContainer.new()
+	controls_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_vbox.add_child(controls_vbox)
+
+	# Attack buttons container (horizontal)
+	attack_container = HBoxContainer.new()
+	attack_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	controls_vbox.add_child(attack_container)
 	_rebuild_attack_buttons()
+
+	# Movement buttons container
+	var movement_hbox = HBoxContainer.new()
+	movement_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	controls_vbox.add_child(movement_hbox)
 
 	move_forward_button = Button.new()
 	move_forward_button.text = "Move Forward"
-	vbox.add_child(move_forward_button)
+	movement_hbox.add_child(move_forward_button)
 
 	move_backward_button = Button.new()
 	move_backward_button.text = "Move Backward"
-	vbox.add_child(move_backward_button)
+	movement_hbox.add_child(move_backward_button)
 
+	# Done turn button
 	done_turn_button = Button.new()
 	done_turn_button.text = "Done Turn"
-	vbox.add_child(done_turn_button)
+	controls_vbox.add_child(done_turn_button)
 
 func _connect_signals():
 	move_forward_button.pressed.connect(_on_move_forward_pressed)
