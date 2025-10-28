@@ -16,4 +16,4 @@ base_stats = {
 "spd": 10,
 "str": 9
 }
-equipped_attacks = Array[String](["slash", "move_forward"])
+equipped_attacks = Array[String](["slash"])

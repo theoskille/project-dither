@@ -2,13 +2,10 @@ extends Control
 
 var player_stats_panel: VBoxContainer
 var enemy_stats_panel: VBoxContainer
+var player_action_panel: VBoxContainer
+var enemy_action_panel: VBoxContainer
 var turn_indicator: Label
 var battlefield_display: VBoxContainer
-var attack_buttons: Array[Button] = []
-var attack_container: HBoxContainer
-var move_forward_button: Button
-var move_backward_button: Button
-var done_turn_button: Button
 
 func _ready():
 	_build_ui()
@@ -65,115 +62,35 @@ func _build_ui():
 	enemy_stats_panel.custom_minimum_size = Vector2(200, 0)
 	middle_hbox.add_child(enemy_stats_panel)
 
-	# Spacer before controls
+	# Spacer before action panels
 	var bottom_spacer = Control.new()
 	bottom_spacer.custom_minimum_size = Vector2(0, 30)
 	main_vbox.add_child(bottom_spacer)
 
-	# Controls section at bottom
-	var controls_vbox = VBoxContainer.new()
-	controls_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	main_vbox.add_child(controls_vbox)
+	# Action panels section (split left/right)
+	var actions_hbox = HBoxContainer.new()
+	actions_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_vbox.add_child(actions_hbox)
 
-	# Attack buttons container (horizontal)
-	attack_container = HBoxContainer.new()
-	attack_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	controls_vbox.add_child(attack_container)
-	_rebuild_attack_buttons()
+	# Player action panel (left)
+	player_action_panel = VBoxContainer.new()
+	player_action_panel.set_script(preload("res://src/ui/EntityActionPanel.gd"))
+	player_action_panel.entity_name = "player"
+	player_action_panel.custom_minimum_size = Vector2(200, 0)
+	actions_hbox.add_child(player_action_panel)
 
-	# Movement buttons container
-	var movement_hbox = HBoxContainer.new()
-	movement_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	controls_vbox.add_child(movement_hbox)
+	# Spacer between action panels
+	var action_spacer = Control.new()
+	action_spacer.custom_minimum_size = Vector2(180, 0)
+	actions_hbox.add_child(action_spacer)
 
-	move_forward_button = Button.new()
-	move_forward_button.text = "Move Forward"
-	movement_hbox.add_child(move_forward_button)
-
-	move_backward_button = Button.new()
-	move_backward_button.text = "Move Backward"
-	movement_hbox.add_child(move_backward_button)
-
-	# Done turn button
-	done_turn_button = Button.new()
-	done_turn_button.text = "Done Turn"
-	controls_vbox.add_child(done_turn_button)
+	# Enemy action panel (right)
+	enemy_action_panel = VBoxContainer.new()
+	enemy_action_panel.set_script(preload("res://src/ui/EntityActionPanel.gd"))
+	enemy_action_panel.entity_name = "enemy"
+	enemy_action_panel.custom_minimum_size = Vector2(200, 0)
+	actions_hbox.add_child(enemy_action_panel)
 
 func _connect_signals():
-	move_forward_button.pressed.connect(_on_move_forward_pressed)
-	move_backward_button.pressed.connect(_on_move_backward_pressed)
-	done_turn_button.pressed.connect(_on_done_turn_pressed)
-	BattleStateStore.state_changed.connect(_on_state_changed)
-
-func _rebuild_attack_buttons():
-	# Clear existing attack buttons
-	for button in attack_buttons:
-		button.queue_free()
-	attack_buttons.clear()
-
-	# Get current entity's equipped attacks
-	var current_entity = CombatEngine._get_current_turn_entity()
-	var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % current_entity)
-
-	if equipped_attacks == null:
-		return
-
-	# Create button for each equipped attack
-	for action_id in equipped_attacks:
-		var action_data = AttackDatabase.get_action(action_id)
-		if action_data == null:
-			continue
-
-		var button = Button.new()
-		button.text = "%s (Range %d-%d)" % [action_data.action_name, action_data.min_range, action_data.max_range]
-		button.pressed.connect(_on_attack_button_pressed.bind(action_id))
-		attack_container.add_child(button)
-		attack_buttons.append(button)
-
-func _on_attack_button_pressed(action_id: String):
-	var action = AttackDatabase.get_action(action_id)
-	var current_entity = CombatEngine._get_current_turn_entity()
-	var target = "enemy" if current_entity == "player" else "player"
-	CombatEngine.execute_move(action, current_entity, target)
-
-func _on_move_forward_pressed():
-	var action = AttackDatabase.get_action("move_forward")
-	var current_entity = CombatEngine._get_current_turn_entity()
-	CombatEngine.execute_move(action, current_entity, current_entity)
-
-func _on_move_backward_pressed():
-	var action = AttackDatabase.get_action("move_backward")
-	var current_entity = CombatEngine._get_current_turn_entity()
-	CombatEngine.execute_move(action, current_entity, current_entity)
-
-func _on_done_turn_pressed():
-	CombatEngine.end_turn()
-
-func _on_state_changed(_property_path: String, _old_value, _new_value):
-	# Rebuild attack buttons if turn changed
-	if _property_path.ends_with("current_turn"):
-		_rebuild_attack_buttons()
-	_update_button_states()
-
-func _update_button_states():
-	var current_entity = CombatEngine._get_current_turn_entity()
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % current_entity)
-	var target = "enemy" if current_entity == "player" else "player"
-
-	# Update dynamic attack buttons
-	var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % current_entity)
-	if equipped_attacks != null:
-		for i in range(attack_buttons.size()):
-			if i < equipped_attacks.size():
-				var action_id = equipped_attacks[i]
-				attack_buttons[i].disabled = not _can_use_action(action_id, current_entity, target)
-
-	# Update movement buttons
-	move_forward_button.disabled = current_vigor < 1
-	move_backward_button.disabled = current_vigor < 1
-
-func _can_use_action(action_id: String, caster: String, target: String) -> bool:
-	var action = AttackDatabase.get_action(action_id)
-	if action == null:
-		return false
-	return CombatEngine.can_execute_action(action, caster, target)
+	# No signals to connect - EntityActionPanels handle their own signals
+	pass
