@@ -25,23 +25,41 @@ func _build_panel():
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Only update when active_effects changes for this entity
-	if property_path == "%s_state.active_effects" % entity_name:
+	# Handle both old format (player_state) and new format (enemies.0)
+	if entity_name == "player" and property_path == "player_state.active_effects":
 		_update_display()
+	elif entity_name.begins_with("enemy_"):
+		var index = int(entity_name.split("_")[1])
+		if property_path == "enemies.%d.active_effects" % index:
+			_update_display()
+
+func _get_entity() -> EntityState:
+	if entity_name == "player":
+		return BattleStateStore.battle_state.player_state
+	elif entity_name.begins_with("enemy_"):
+		var index = int(entity_name.split("_")[1])
+		if index >= 0 and index < BattleStateStore.battle_state.enemies.size():
+			return BattleStateStore.battle_state.enemies[index]
+	return null
 
 func _update_display():
 	# Clear existing effect displays
 	for child in effects_container.get_children():
 		child.queue_free()
 
+	var entity = _get_entity()
+	if not entity:
+		title_label.text = "EFFECTS (NO ENTITY)"
+		return
+
 	# Update title
-	var stored_name = BattleStateStore.get_state_value("%s_state.name" % entity_name)
-	if stored_name != null and not stored_name.is_empty():
-		title_label.text = "EFFECTS (%s)" % stored_name.to_upper()
+	if entity.name != null and not entity.name.is_empty():
+		title_label.text = "EFFECTS (%s)" % entity.name.to_upper()
 	else:
 		title_label.text = "EFFECTS (%s)" % entity_name.to_upper()
 
 	# Get active effects
-	var active_effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity_name)
+	var active_effects = entity.active_effects
 
 	if active_effects.is_empty():
 		var no_effects_label = Label.new()

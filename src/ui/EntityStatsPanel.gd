@@ -60,33 +60,48 @@ func _build_panel():
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Update when any property of this entity changes
-	if property_path.begins_with("%s_state." % entity_name):
+	# Handle both old format (player_state) and new format (enemies.0)
+	if entity_name == "player" and property_path.begins_with("player_state."):
 		_update_display()
+	elif entity_name.begins_with("enemy_"):
+		var index = int(entity_name.split("_")[1])
+		if property_path.begins_with("enemies.%d." % index) or property_path == "enemies.%d" % index:
+			_update_display()
+
+func _get_entity() -> EntityState:
+	if entity_name == "player":
+		return BattleStateStore.battle_state.player_state
+	elif entity_name.begins_with("enemy_"):
+		var index = int(entity_name.split("_")[1])
+		if index >= 0 and index < BattleStateStore.battle_state.enemies.size():
+			return BattleStateStore.battle_state.enemies[index]
+	return null
 
 func _update_display():
+	var entity = _get_entity()
+	if not entity:
+		title_label.text = "NO ENTITY"
+		hp_label.text = "HP: -/-"
+		vigor_label.text = "Vigor: -/-"
+		return
+
 	# Update title - use stored name if available, otherwise fallback to entity_name
-	var stored_name = BattleStateStore.get_state_value("%s_state.name" % entity_name)
-	if stored_name != null and not stored_name.is_empty():
-		title_label.text = stored_name.to_upper()
+	if entity.name != null and not entity.name.is_empty():
+		title_label.text = entity.name.to_upper()
 	else:
 		title_label.text = entity_name.to_upper()
 
 	# Update HP label
-	var current_hp = BattleStateStore.get_state_value("%s_state.current_hp" % entity_name)
-	var max_hp = BattleStateStore.get_state_value("%s_state.max_hp" % entity_name)
-	hp_label.text = "HP: %d/%d" % [current_hp, max_hp]
+	hp_label.text = "HP: %d/%d" % [entity.current_hp, entity.max_hp]
 
 	# Update Vigor label
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity_name)
-	var max_vigor = BattleStateStore.get_state_value("%s_state.max_vigor" % entity_name)
-	vigor_label.text = "Vigor: %d/%d" % [current_vigor, max_vigor]
+	vigor_label.text = "Vigor: %d/%d" % [entity.current_vigor, entity.max_vigor]
 
 	# Update base stats
-	var base_stats = BattleStateStore.get_state_value("%s_state.base_stats" % entity_name)
-	if base_stats != null:
+	if entity.base_stats != null:
 		var stat_keys = ["con", "dex", "str", "int", "spd", "luck"]
 		for i in range(stat_keys.size()):
 			var stat_key = stat_keys[i]
 			var stat_label = stats_container.get_child(i)
-			if stat_label != null and base_stats.has(stat_key):
-				stat_label.text = "%s: %d" % [stat_key.to_upper(), base_stats[stat_key]]
+			if stat_label != null and entity.base_stats.has(stat_key):
+				stat_label.text = "%s: %d" % [stat_key.to_upper(), entity.base_stats[stat_key]]

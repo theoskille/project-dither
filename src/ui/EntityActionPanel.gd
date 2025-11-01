@@ -6,6 +6,8 @@ var action_buttons: Array[Button] = []
 var move_forward_button: Button
 var move_backward_button: Button
 var done_turn_button: Button
+var target_selection_panel: VBoxContainer = null
+var pending_action_id: String = ""
 
 func _ready():
 	BattleStateStore.state_changed.connect(_on_state_changed)
@@ -47,17 +49,13 @@ func _build_panel():
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Rebuild attack buttons if equipped attacks changed for this entity
-	if property_path == "%s_state.equipped_attacks" % entity_name:
+	if property_path.contains("%s_state.equipped_attacks" % entity_name) or property_path.contains("enemies."):
 		_rebuild_action_buttons()
-
-	# Determine target entity
-	var target = "enemy" if entity_name == "player" else "player"
 
 	# Update button states when turn changes, vigor changes, or positions change
 	if (property_path.ends_with("current_turn_index") or
-		property_path == "%s_state.current_vigor" % entity_name or
-		property_path == "%s_state.position" % entity_name or
-		property_path == "%s_state.position" % target):
+		property_path.contains("%s_state.current_vigor" % entity_name) or
+		property_path.contains("position")):
 		_update_buttons()
 
 func _rebuild_action_buttons():
@@ -93,16 +91,35 @@ func _rebuild_action_buttons():
 func _update_buttons():
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var is_my_turn = (current_entity == entity_name)
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity_name)
-	var target = "enemy" if entity_name == "player" else "player"
+	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity_name) if entity_name == "player" else 0
 
-	# Update action buttons
+	# For enemies, check if they exist in the enemies array
+	if entity_name.begins_with("enemy_"):
+		var index = int(entity_name.split("_")[1])
+		if index >= BattleStateStore.battle_state.enemies.size():
+			# This enemy doesn't exist, disable everything
+			for button in action_buttons:
+				button.disabled = true
+			move_forward_button.disabled = true
+			move_backward_button.disabled = true
+			done_turn_button.disabled = true
+			return
+		var enemy = BattleStateStore.battle_state.enemies[index]
+		current_vigor = enemy.current_vigor
+
+	# Update action buttons (basic enabled/disabled based on turn and vigor)
 	for i in range(action_buttons.size()):
 		var button = action_buttons[i]
-		var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % entity_name)
+		var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % entity_name) if entity_name == "player" else null
+		if entity_name.begins_with("enemy_"):
+			var index = int(entity_name.split("_")[1])
+			var enemy = BattleStateStore.battle_state.enemies[index]
+			equipped_attacks = enemy.equipped_attacks
+
 		if equipped_attacks != null and i < equipped_attacks.size():
 			var action_id = equipped_attacks[i]
-			button.disabled = not is_my_turn or not _can_use_action(action_id, entity_name, target)
+			var action = AttackDatabase.get_action(action_id)
+			button.disabled = not is_my_turn or (action and current_vigor < action.vigor_cost)
 		else:
 			button.disabled = true
 
@@ -113,16 +130,68 @@ func _update_buttons():
 	# Update done turn button
 	done_turn_button.disabled = not is_my_turn
 
-func _can_use_action(action_id: String, caster: String, target: String) -> bool:
-	var action = AttackDatabase.get_action(action_id)
-	if action == null:
-		return false
-	return CombatEngine.can_execute_action(action, caster, target)
-
 func _on_action_button_pressed(action_id: String):
 	var action = AttackDatabase.get_action(action_id)
-	var target = "enemy" if entity_name == "player" else "player"
-	CombatEngine.execute_move(action, entity_name, target)
+	if not action:
+		return
+
+	# For player, show target selection panel
+	if entity_name == "player":
+		pending_action_id = action_id
+		_show_target_selection(action)
+	# For enemies, auto-target the player (simple AI)
+	else:
+		CombatEngine.execute_move(action, entity_name, "player")
+
+func _show_target_selection(action: ActionData):
+	# Create target selection panel if it doesn't exist
+	if target_selection_panel == null:
+		target_selection_panel = VBoxContainer.new()
+		target_selection_panel.set_script(preload("res://src/ui/TargetSelectionPanel.gd"))
+		target_selection_panel.target_selected.connect(_on_target_selected)
+		target_selection_panel.cancelled.connect(_on_target_selection_cancelled)
+		add_child(target_selection_panel)
+
+	# Configure the panel
+	target_selection_panel.caster_id = entity_name
+	target_selection_panel.action_data = action
+	target_selection_panel.visible = true
+	target_selection_panel.refresh()  # Update target buttons with current HP/position
+
+	# Hide action buttons while selecting target
+	_set_action_buttons_visible(false)
+
+func _on_target_selected(target_id: String):
+	# Hide target selection panel
+	if target_selection_panel:
+		target_selection_panel.visible = false
+
+	# Show action buttons again
+	_set_action_buttons_visible(true)
+
+	# Execute the action
+	var action = AttackDatabase.get_action(pending_action_id)
+	if action:
+		CombatEngine.execute_move(action, entity_name, target_id)
+
+	pending_action_id = ""
+
+func _on_target_selection_cancelled():
+	# Hide target selection panel
+	if target_selection_panel:
+		target_selection_panel.visible = false
+
+	# Show action buttons again
+	_set_action_buttons_visible(true)
+
+	pending_action_id = ""
+
+func _set_action_buttons_visible(visible: bool):
+	for button in action_buttons:
+		button.visible = visible
+	move_forward_button.visible = visible
+	move_backward_button.visible = visible
+	done_turn_button.visible = visible
 
 func _on_move_forward_pressed():
 	var action = AttackDatabase.get_action("move_forward")

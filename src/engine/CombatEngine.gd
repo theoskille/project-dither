@@ -1,13 +1,17 @@
 extends Node
 
-func initialize_enemy(enemy_id: String, position: int = 5):
-	var enemy_data = EnemyDatabase.get_enemy(enemy_id)
-	if enemy_data == null:
-		push_error("CombatEngine: Cannot initialize enemy - enemy_id '%s' not found" % enemy_id)
-		return
+func initialize_enemies(enemy_configs: Array):
+	for config in enemy_configs:
+		var enemy_id = config.get("enemy_id", "")
+		var position = config.get("position", 5)
 
-	BattleStateMutations.initialize_entity_from_enemy_data("enemy", enemy_data, position)
-	print("CombatEngine: Initialized enemy '%s' at position %d" % [enemy_data.enemy_name, position])
+		var enemy_data = EnemyDatabase.get_enemy(enemy_id)
+		if enemy_data == null:
+			push_error("CombatEngine: Cannot initialize enemy - enemy_id '%s' not found" % enemy_id)
+			continue
+
+		BattleStateMutations.add_enemy_to_battle(enemy_data, position)
+		print("CombatEngine: Initialized enemy '%s' at position %d" % [enemy_data.enemy_name, position])
 
 func execute_move(action_data: ActionData, caster: String, target: String) -> bool:
 	if not can_execute_action(action_data, caster, target):
@@ -19,36 +23,39 @@ func execute_move(action_data: ActionData, caster: String, target: String) -> bo
 func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
 	return _perform_action_legacy(move_data, caster, target)
 
-func _perform_action(action_data: ActionData, caster: String, target: String) -> bool:
-	var damage = _calculate_damage_from_action(action_data, caster)
+func _perform_action(action_data: ActionData, caster_id: String, target_id: String) -> bool:
+	var damage = _calculate_damage_from_action(action_data, caster_id)
 
 	if damage > 0:
-		var current_hp = BattleStateStore.get_state_value("%s_state.current_hp" % target)
-		BattleStateMutations.set_entity_hp(target, max(0, current_hp - damage))
+		var target_entity = _get_entity_by_id(target_id)
+		if target_entity:
+			BattleStateMutations.set_entity_hp(target_id, max(0, target_entity.current_hp - damage))
 
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
 
 	# Move caster if specified
 	if action_data.move_caster != 0:
-		var current_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
-		var new_pos = clamp(current_pos + action_data.move_caster, 0, max_position)
-		BattleStateMutations.set_entity_position(caster, new_pos)
+		var caster_entity = _get_entity_by_id(caster_id)
+		if caster_entity:
+			var new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
+			BattleStateMutations.set_entity_position(caster_id, new_pos)
 
 	# Move target if specified (relative to caster position)
 	if action_data.move_target != 0:
-		var caster_pos = BattleStateStore.get_state_value("%s_state.position" % caster)
-		var target_pos = BattleStateStore.get_state_value("%s_state.position" % target)
+		var caster_entity = _get_entity_by_id(caster_id)
+		var target_entity = _get_entity_by_id(target_id)
 
-		# Calculate direction: positive if target is to the right, negative if to the left
-		var direction = sign(target_pos - caster_pos)
+		if caster_entity and target_entity:
+			# Calculate direction: positive if target is to the right, negative if to the left
+			var direction = sign(target_entity.position - caster_entity.position)
 
-		# Apply relative movement: positive move_target = away from caster, negative = toward caster
-		var new_pos = clamp(target_pos + (action_data.move_target * direction), 0, max_position)
-		BattleStateMutations.set_entity_position(target, new_pos)
+			# Apply relative movement: positive move_target = away from caster, negative = toward caster
+			var new_pos = clamp(target_entity.position + (action_data.move_target * direction), 0, max_position)
+			BattleStateMutations.set_entity_position(target_id, new_pos)
 
 	if action_data.applies_effect_id != "":
-		_apply_effect_to_entity(target, action_data.applies_effect_id, action_data.effect_duration_override)
+		_apply_effect_to_entity(target_id, action_data.applies_effect_id, action_data.effect_duration_override)
 
 	return true
 
@@ -89,32 +96,65 @@ func process_turn_end():
 	BattleStateMutations.advance_turn()
 	BattleStateMutations.set_turn_phase("action")
 
-func can_execute_action(action_data: ActionData, caster: String, target: String) -> bool:
-	if not _is_entity_turn(caster):
+func can_execute_action(action_data: ActionData, caster_id: String, target_id: String) -> bool:
+	if not _is_entity_turn(caster_id):
 		return false
 
 	# Check if caster is blocked by status effects
-	if _is_action_blocked_by_effects(caster, action_data.action_type):
+	if _is_action_blocked_by_effects(caster_id, action_data.action_type):
 		return false
 
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % caster)
-	if current_vigor < action_data.vigor_cost:
+	var caster_entity = _get_entity_by_id(caster_id)
+	if not caster_entity or caster_entity.current_vigor < action_data.vigor_cost:
 		return false
 
-	var distance = _get_distance_between_entities(caster, target)
+	var distance = _get_distance_between_entities(caster_id, target_id)
 	if distance < action_data.min_range or distance > action_data.max_range:
 		return false
 
 	return true
 
-func start_turn(entity: String):
-	BattleStateMutations.restore_vigor(entity, 1)
+func start_battle():
+	# Generate speed-based turn order
+	var turn_order = _generate_turn_order()
+	BattleStateMutations.set_turn_order(turn_order)
+
+	# Start the first turn
+	if turn_order.size() > 0:
+		var first_entity = turn_order[0]
+		start_turn(first_entity)
+
+func start_turn(entity_id: String):
+	BattleStateMutations.restore_vigor(entity_id, 1)
 	BattleStateMutations.set_turn_phase("action")
 
 func end_turn():
 	process_turn_end()
 	var next_entity = _get_current_turn_entity()
 	start_turn(next_entity)
+
+func _generate_turn_order() -> Array[String]:
+	var combatants = []
+
+	# Add player
+	var player = BattleStateStore.battle_state.player_state
+	combatants.append({"id": "player", "spd": player.base_stats.get("spd", 0)})
+
+	# Add all enemies
+	var enemies = BattleStateStore.battle_state.enemies
+	for i in range(enemies.size()):
+		combatants.append({"id": "enemy_%d" % i, "spd": enemies[i].base_stats.get("spd", 0)})
+
+	# Sort by speed (highest first)
+	combatants.sort_custom(func(a, b): return a.spd > b.spd)
+
+	# Extract IDs
+	var turn_order: Array[String] = []
+	for combatant in combatants:
+		turn_order.append(combatant.id)
+
+	print("CombatEngine: Generated turn order: %s" % str(turn_order))
+	return turn_order
 
 func _is_entity_turn(entity: String) -> bool:
 	var current_entity = _get_current_turn_entity()
@@ -125,42 +165,61 @@ func _get_current_turn_entity() -> String:
 	var current_index = BattleStateStore.get_state_value("turn_state.current_turn_index")
 	return turn_order[current_index]
 
-func _get_distance_between_entities(entity1: String, entity2: String) -> int:
-	var pos1 = BattleStateStore.get_state_value("%s_state.position" % entity1)
-	var pos2 = BattleStateStore.get_state_value("%s_state.position" % entity2)
-	return abs(pos1 - pos2)
+func _get_distance_between_entities(entity1_id: String, entity2_id: String) -> int:
+	var entity1 = _get_entity_by_id(entity1_id)
+	var entity2 = _get_entity_by_id(entity2_id)
 
-func _is_action_blocked_by_effects(entity: String, action_type: String) -> bool:
-	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
+	if not entity1 or not entity2:
+		return 999  # Return large distance if entity not found
 
-	for effect in effects:
+	return abs(entity1.position - entity2.position)
+
+func _get_entity_by_id(entity_id: String) -> EntityState:
+	if entity_id == "player":
+		return BattleStateStore.battle_state.player_state
+	elif entity_id.begins_with("enemy_"):
+		var index = int(entity_id.split("_")[1])
+		if index >= 0 and index < BattleStateStore.battle_state.enemies.size():
+			return BattleStateStore.battle_state.enemies[index]
+	return null
+
+func _is_action_blocked_by_effects(entity_id: String, action_type: String) -> bool:
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return false
+
+	for effect in entity.active_effects:
 		# Check if effect blocks all actions
 		if effect.blocks_all_actions:
-			print("CombatEngine: %s cannot act - blocked by '%s'" % [entity, effect.effect_id])
+			print("CombatEngine: %s cannot act - blocked by '%s'" % [entity_id, effect.effect_id])
 			return true
 
 		# Check if effect blocks this specific action type
 		if action_type in effect.blocks_action_types:
-			print("CombatEngine: %s cannot perform '%s' action - blocked by '%s'" % [entity, action_type, effect.effect_id])
+			print("CombatEngine: %s cannot perform '%s' action - blocked by '%s'" % [entity_id, action_type, effect.effect_id])
 			return true
 
 	return false
 
-func _calculate_damage_from_action(action_data: ActionData, caster: String) -> int:
+func _calculate_damage_from_action(action_data: ActionData, caster_id: String) -> int:
 	var total_damage = action_data.base_damage
-	
-	var stats = BattleStateStore.get_state_value("%s_state.base_stats" % caster)
-	
+
+	var caster = _get_entity_by_id(caster_id)
+	if not caster:
+		return 0
+
+	var stats = caster.base_stats
+
 	total_damage += int(stats.str * action_data.str_modifier)
 	total_damage += int(stats.dex * action_data.dex_modifier)
 	total_damage += int(stats.int * action_data.int_modifier)
 	total_damage += int(stats.con * action_data.con_modifier)
 	total_damage += int(stats.spd * action_data.spd_modifier)
 	total_damage += int(stats.luck * action_data.luck_modifier)
-	
-	var effect_modifiers = _get_total_stat_modifier(caster, "str")
+
+	var effect_modifiers = _get_total_stat_modifier(caster_id, "str")
 	total_damage += effect_modifiers
-	
+
 	return max(0, total_damage)
 
 func _calculate_damage(move_data: Dictionary, caster: String) -> int:
@@ -170,14 +229,17 @@ func _calculate_damage(move_data: Dictionary, caster: String) -> int:
 	
 	return base_damage + str_stat + str_modifier
 
-func _get_total_stat_modifier(entity: String, stat: String) -> int:
-	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	var base_stat = BattleStateStore.get_state_value("%s_state.base_stats.%s" % [entity, stat])
+func _get_total_stat_modifier(entity_id: String, stat: String) -> int:
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return 0
+
+	var base_stat = entity.base_stats.get(stat, 0)
 
 	var flat_modifier = 0
 	var percent_modifier = 0
 
-	for effect in effects:
+	for effect in entity.active_effects:
 		flat_modifier += effect.get("%s_modifier" % stat)
 		percent_modifier += effect.get("percent_%s_modifier" % stat)
 
@@ -185,21 +247,25 @@ func _get_total_stat_modifier(entity: String, stat: String) -> int:
 	var modified_stat = (base_stat + flat_modifier) * (1.0 + percent_modifier / 100.0)
 	return int(modified_stat) - base_stat
 
-func _apply_effect_to_entity(entity: String, effect_id: String, duration_override: int = 0):
+func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_override: int = 0):
 	var effect_template = EffectDatabase.get_effect(effect_id)
 	if effect_template == null:
 		push_error("CombatEngine: Cannot apply effect - effect_id '%s' not found" % effect_id)
 		return
 
 	# Check if effect already exists (no stacking - refresh duration instead)
-	var existing_effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	for i in range(existing_effects.size()):
-		if existing_effects[i].effect_id == effect_id:
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	for i in range(entity.active_effects.size()):
+		if entity.active_effects[i].effect_id == effect_id:
 			# Refresh duration
 			var new_duration = duration_override if duration_override > 0 else effect_template.base_duration
-			existing_effects[i].remaining_duration = new_duration
-			BattleStateStore._emit_change("%s_state.active_effects" % entity, null, existing_effects)
-			print("CombatEngine: Refreshed effect '%s' on %s (duration: %d)" % [effect_id, entity, new_duration])
+			entity.active_effects[i].remaining_duration = new_duration
+			var property_path = BattleStateMutations._get_entity_property_path(entity_id, "active_effects")
+			BattleStateStore._emit_change(property_path, null, entity.active_effects)
+			print("CombatEngine: Refreshed effect '%s' on %s (duration: %d)" % [effect_id, entity_id, new_duration])
 			return
 
 	# Create new effect instance from template
@@ -222,28 +288,34 @@ func _apply_effect_to_entity(entity: String, effect_id: String, duration_overrid
 	effect.blocks_all_actions = effect_template.blocks_all_actions
 	effect.blocks_action_types = effect_template.blocks_action_types.duplicate()
 
-	BattleStateMutations.add_effect_to_entity(entity, effect)
-	print("CombatEngine: Applied effect '%s' to %s (duration: %d)" % [effect_id, entity, effect.remaining_duration])
+	BattleStateMutations.add_effect_to_entity(entity_id, effect)
+	print("CombatEngine: Applied effect '%s' to %s (duration: %d)" % [effect_id, entity_id, effect.remaining_duration])
 
 func _process_damage_over_time():
-	for entity in ["player", "enemy"]:
-		var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
+	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
+	for entity_id in turn_order:
+		var entity = _get_entity_by_id(entity_id)
+		if not entity:
+			continue
+
 		var total_dot_damage = 0
-		
-		for effect in effects:
+		for effect in entity.active_effects:
 			total_dot_damage += effect.damage_per_turn
-		
+
 		if total_dot_damage > 0:
-			var current_hp = BattleStateStore.get_state_value("%s_state.current_hp" % entity)
-			BattleStateMutations.set_entity_hp(entity, max(0, current_hp - total_dot_damage))
+			BattleStateMutations.set_entity_hp(entity_id, max(0, entity.current_hp - total_dot_damage))
 
 func _decrement_effect_durations():
-	for entity in ["player", "enemy"]:
+	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
+	for entity_id in turn_order:
 		# Decrement all durations via mutation layer
-		BattleStateMutations.decrement_effect_durations(entity)
+		BattleStateMutations.decrement_effect_durations(entity_id)
 
 		# Remove expired effects (must check after decrement)
-		var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-		for i in range(effects.size() - 1, -1, -1):
-			if effects[i].remaining_duration <= 0:
-				BattleStateMutations.remove_effect_from_entity(entity, i)
+		var entity = _get_entity_by_id(entity_id)
+		if not entity:
+			continue
+
+		for i in range(entity.active_effects.size() - 1, -1, -1):
+			if entity.active_effects[i].remaining_duration <= 0:
+				BattleStateMutations.remove_effect_from_entity(entity_id, i)

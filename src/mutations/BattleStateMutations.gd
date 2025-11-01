@@ -1,20 +1,52 @@
 extends Node
 
-func set_entity_hp(entity: String, new_hp: int):
-	var old_hp = BattleStateStore.get_state_value("%s_state.current_hp" % entity)
-	BattleStateStore.battle_state.get("%s_state" % entity).current_hp = new_hp
-	BattleStateStore._emit_change("%s_state.current_hp" % entity, old_hp, new_hp)
+# Helper function to get entity by ID (player, enemy_0, enemy_1, etc.)
+func _get_entity_by_id(entity_id: String) -> EntityState:
+	if entity_id == "player":
+		return BattleStateStore.battle_state.player_state
+	elif entity_id.begins_with("enemy_"):
+		var index = int(entity_id.split("_")[1])
+		if index >= 0 and index < BattleStateStore.battle_state.enemies.size():
+			return BattleStateStore.battle_state.enemies[index]
+	return null
 
-func add_effect_to_entity(entity: String, effect: EffectState):
-	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	effects.append(effect)
-	BattleStateStore._emit_change("%s_state.active_effects" % entity, null, effects)
+# Helper function to get property path for entity (handles both old and new formats)
+func _get_entity_property_path(entity_id: String, property: String) -> String:
+	if entity_id == "player":
+		return "player_state." + property
+	elif entity_id.begins_with("enemy_"):
+		var index = int(entity_id.split("_")[1])
+		return "enemies.%d.%s" % [index, property]
+	return ""
 
-func remove_effect_from_entity(entity: String, effect_index: int):
-	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	var removed_effect = effects[effect_index]
-	effects.remove_at(effect_index)
-	BattleStateStore._emit_change("%s_state.active_effects" % entity, removed_effect, effects)
+func set_entity_hp(entity_id: String, new_hp: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "current_hp")
+	var old_hp = entity.current_hp
+	entity.current_hp = new_hp
+	BattleStateStore._emit_change(property_path, old_hp, new_hp)
+
+func add_effect_to_entity(entity_id: String, effect: EffectState):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_effects")
+	entity.active_effects.append(effect)
+	BattleStateStore._emit_change(property_path, null, entity.active_effects)
+
+func remove_effect_from_entity(entity_id: String, effect_index: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_effects")
+	var removed_effect = entity.active_effects[effect_index]
+	entity.active_effects.remove_at(effect_index)
+	BattleStateStore._emit_change(property_path, removed_effect, entity.active_effects)
 
 func advance_turn():
 	var current_index = BattleStateStore.get_state_value("turn_state.current_turn_index")
@@ -35,40 +67,63 @@ func increment_turn_number():
 	BattleStateStore.battle_state.turn_state.current_turn_number = new_turn
 	BattleStateStore._emit_change("turn_state.current_turn_number", old_turn, new_turn)
 
-func set_entity_vigor(entity: String, new_vigor: int):
-	var old_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity)
-	BattleStateStore.battle_state.get("%s_state" % entity).current_vigor = new_vigor
-	BattleStateStore._emit_change("%s_state.current_vigor" % entity, old_vigor, new_vigor)
+func set_entity_vigor(entity_id: String, new_vigor: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
 
-func consume_vigor(entity: String, amount: int):
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity)
-	var new_vigor = max(0, current_vigor - amount)
-	set_entity_vigor(entity, new_vigor)
+	var property_path = _get_entity_property_path(entity_id, "current_vigor")
+	var old_vigor = entity.current_vigor
+	entity.current_vigor = new_vigor
+	BattleStateStore._emit_change(property_path, old_vigor, new_vigor)
 
-func restore_vigor(entity: String, amount: int):
-	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity)
-	var max_vigor = BattleStateStore.get_state_value("%s_state.max_vigor" % entity)
-	var new_vigor = min(max_vigor, current_vigor + amount)
-	set_entity_vigor(entity, new_vigor)
+func consume_vigor(entity_id: String, amount: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
 
-func set_entity_position(entity: String, new_position: int):
-	var old_position = BattleStateStore.get_state_value("%s_state.position" % entity)
-	BattleStateStore.battle_state.get("%s_state" % entity).position = new_position
-	BattleStateStore._emit_change("%s_state.position" % entity, old_position, new_position)
+	var new_vigor = max(0, entity.current_vigor - amount)
+	set_entity_vigor(entity_id, new_vigor)
 
-func decrement_effect_durations(entity: String):
-	var effects = BattleStateStore.get_state_value("%s_state.active_effects" % entity)
-	var old_effects = effects  # Capture for signal
+func restore_vigor(entity_id: String, amount: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
 
-	for effect in effects:
+	var new_vigor = min(entity.max_vigor, entity.current_vigor + amount)
+	set_entity_vigor(entity_id, new_vigor)
+
+func set_entity_position(entity_id: String, new_position: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "position")
+	var old_position = entity.position
+	entity.position = new_position
+	BattleStateStore._emit_change(property_path, old_position, new_position)
+
+func decrement_effect_durations(entity_id: String):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_effects")
+	var old_effects = entity.active_effects  # Capture for signal
+
+	for effect in entity.active_effects:
 		effect.remaining_duration -= 1
 
 	# Emit signal so UI updates
-	BattleStateStore._emit_change("%s_state.active_effects" % entity, old_effects, effects)
+	BattleStateStore._emit_change(property_path, old_effects, entity.active_effects)
 
-func initialize_entity_from_enemy_data(entity: String, enemy_data: EnemyData, position: int):
-	var entity_state = BattleStateStore.battle_state.get("%s_state" % entity)
+func set_turn_order(new_order: Array[String]):
+	var old_order = BattleStateStore.get_state_value("turn_state.turn_order")
+	BattleStateStore.battle_state.turn_state.turn_order = new_order
+	BattleStateStore._emit_change("turn_state.turn_order", old_order, new_order)
 
+func add_enemy_to_battle(enemy_data: EnemyData, position: int):
+	var entity_state = EntityState.new()
 	entity_state.name = enemy_data.enemy_name
 	entity_state.max_hp = enemy_data.max_hp
 	entity_state.current_hp = enemy_data.max_hp
@@ -78,15 +133,12 @@ func initialize_entity_from_enemy_data(entity: String, enemy_data: EnemyData, po
 	entity_state.equipped_attacks = enemy_data.equipped_attacks.duplicate()
 	entity_state.position = position
 
-	# Clear active effects using a properly typed array
+	# Use properly typed array
 	var empty_effects: Array[EffectState] = []
 	entity_state.active_effects = empty_effects
 
-	# Emit signals for all changed properties
-	BattleStateStore._emit_change("%s_state.max_hp" % entity, null, enemy_data.max_hp)
-	BattleStateStore._emit_change("%s_state.current_hp" % entity, null, enemy_data.max_hp)
-	BattleStateStore._emit_change("%s_state.max_vigor" % entity, null, enemy_data.max_vigor)
-	BattleStateStore._emit_change("%s_state.current_vigor" % entity, null, enemy_data.max_vigor)
-	BattleStateStore._emit_change("%s_state.base_stats" % entity, null, enemy_data.base_stats)
-	BattleStateStore._emit_change("%s_state.equipped_attacks" % entity, null, enemy_data.equipped_attacks)
-	BattleStateStore._emit_change("%s_state.position" % entity, null, position)
+	BattleStateStore.battle_state.enemies.append(entity_state)
+	var enemy_index = BattleStateStore.battle_state.enemies.size() - 1
+
+	# Emit signal for new enemy added
+	BattleStateStore._emit_change("enemies.%d" % enemy_index, null, entity_state)
