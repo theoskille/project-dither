@@ -1,11 +1,36 @@
-extends VBoxContainer
+extends PanelContainer
+
+# Enhanced battlefield display with better styling
 
 @onready var position_labels = []
+var positions_container: VBoxContainer
 
 func _ready():
 	BattleStateStore.state_changed.connect(_on_state_changed)
+	_build_battlefield()
 	_setup_position_labels()
 	_update_display()
+
+func _build_battlefield():
+	# Set minimum size for prominent central display
+	custom_minimum_size = Vector2(200, 400)
+
+	# Create container for positions
+	positions_container = VBoxContainer.new()
+	positions_container.add_theme_constant_override("separation", 6)
+	add_child(positions_container)
+
+	# Add title
+	var title = Label.new()
+	title.text = "BATTLEFIELD"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 14)
+	positions_container.add_child(title)
+
+	# Add spacer
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	positions_container.add_child(spacer)
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Update display when any entity position changes or when enemies array changes
@@ -18,7 +43,9 @@ func _setup_position_labels():
 		var label = Label.new()
 		label.text = "[ ]"
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		add_child(label)
+		label.add_theme_font_size_override("font_size", 14)
+		label.custom_minimum_size = Vector2(0, 24)
+		positions_container.add_child(label)
 		position_labels.append(label)
 
 func _update_display():

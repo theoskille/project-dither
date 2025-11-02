@@ -78,9 +78,17 @@ func _get_potential_targets() -> Array[String]:
 		var enemies = BattleStateStore.battle_state.enemies
 		for i in range(enemies.size()):
 			targets.append("enemy_%d" % i)
-	# If enemy is casting, can only target player (for now)
+	# If enemy is casting, can target player AND other enemies (manual control)
 	else:
+		# Add player as option
 		targets.append("player")
+		# Add all other enemies as options
+		var enemies = BattleStateStore.battle_state.enemies
+		for i in range(enemies.size()):
+			var enemy_id = "enemy_%d" % i
+			# Don't add self as target
+			if enemy_id != caster_id:
+				targets.append(enemy_id)
 
 	return targets
 
