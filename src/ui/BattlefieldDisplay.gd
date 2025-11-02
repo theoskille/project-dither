@@ -1,9 +1,10 @@
 extends PanelContainer
 
-# Enhanced battlefield display with better styling
+# Horizontal battlefield display spanning upper half of screen
 
 @onready var position_labels = []
-var positions_container: VBoxContainer
+var main_container: VBoxContainer
+var positions_container: HBoxContainer
 
 func _ready():
 	BattleStateStore.state_changed.connect(_on_state_changed)
@@ -12,25 +13,26 @@ func _ready():
 	_update_display()
 
 func _build_battlefield():
-	# Set minimum size for prominent central display
-	custom_minimum_size = Vector2(200, 400)
+	# Set minimum size for horizontal full-width display
+	custom_minimum_size = Vector2(800, 180)
 
-	# Create container for positions
-	positions_container = VBoxContainer.new()
-	positions_container.add_theme_constant_override("separation", 6)
-	add_child(positions_container)
+	# Main vertical container for title + positions
+	main_container = VBoxContainer.new()
+	main_container.add_theme_constant_override("separation", 10)
+	add_child(main_container)
 
 	# Add title
 	var title = Label.new()
 	title.text = "BATTLEFIELD"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 14)
-	positions_container.add_child(title)
+	title.add_theme_font_size_override("font_size", 16)
+	main_container.add_child(title)
 
-	# Add spacer
-	var spacer = Control.new()
-	spacer.custom_minimum_size = Vector2(0, 10)
-	positions_container.add_child(spacer)
+	# Create horizontal container for position tiles
+	positions_container = HBoxContainer.new()
+	positions_container.add_theme_constant_override("separation", 8)
+	positions_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	main_container.add_child(positions_container)
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Update display when any entity position changes or when enemies array changes
@@ -43,8 +45,8 @@ func _setup_position_labels():
 		var label = Label.new()
 		label.text = "[ ]"
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 14)
-		label.custom_minimum_size = Vector2(0, 24)
+		label.add_theme_font_size_override("font_size", 18)
+		label.custom_minimum_size = Vector2(50, 60)  # Larger tiles for horizontal layout
 		positions_container.add_child(label)
 		position_labels.append(label)
 

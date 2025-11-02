@@ -1,32 +1,30 @@
 extends ScrollContainer
 
-# Grid display for multiple enemy panels (full EntityPanel for each enemy)
+# Horizontal row display for multiple enemy panels (full EntityPanel for each enemy)
 
-var grid_container: GridContainer
+var row_container: HBoxContainer
 var enemy_panels: Array[PanelContainer] = []
 
 func _ready():
 	BattleStateStore.state_changed.connect(_on_state_changed)
-	_build_grid()
+	_build_row()
 	_populate_enemies()
 
-func _build_grid():
+func _build_row():
 	# Set minimum size
-	custom_minimum_size = Vector2(450, 400)
+	custom_minimum_size = Vector2(600, 400)
 
-	# Enable vertical scrolling only
-	horizontal_scroll_mode = SCROLL_MODE_DISABLED
-	vertical_scroll_mode = SCROLL_MODE_AUTO
+	# Enable horizontal scrolling only
+	horizontal_scroll_mode = SCROLL_MODE_AUTO
+	vertical_scroll_mode = SCROLL_MODE_DISABLED
 
-	# Create grid container
-	grid_container = GridContainer.new()
-	grid_container.columns = 2  # 2 columns for grid
-	grid_container.add_theme_constant_override("h_separation", 10)
-	grid_container.add_theme_constant_override("v_separation", 10)
-	add_child(grid_container)
+	# Create horizontal container for enemy panels
+	row_container = HBoxContainer.new()
+	row_container.add_theme_constant_override("separation", 12)
+	add_child(row_container)
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
-	# Rebuild grid if enemies array changes size
+	# Rebuild row if enemies array changes size
 	if property_path == "enemies" or property_path.begins_with("enemies.") and not property_path.contains("."):
 		# Check if we need to rebuild (different number of enemies)
 		var current_enemy_count = BattleStateStore.battle_state.enemies.size()
@@ -45,5 +43,5 @@ func _populate_enemies():
 		var panel = PanelContainer.new()
 		panel.set_script(preload("res://src/ui/EntityPanel.gd"))
 		panel.entity_name = "enemy_%d" % i
-		grid_container.add_child(panel)
+		row_container.add_child(panel)
 		enemy_panels.append(panel)
