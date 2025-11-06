@@ -1,8 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6l3ecygf5evd"]
+[gd_scene load_steps=3 format=3 uid="uid://c6l3ecygf5evd"]
 
 [ext_resource type="Script" uid="uid://q6h5hfu4bm1o" path="res://Main.gd" id="1_glv2v"]
+[ext_resource type="Theme" uid="uid://dac3q5vvcvjrd" path="res://theme_retro_bw.tres" id="2_theme"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 0
+theme = ExtResource("2_theme")
 script = ExtResource("1_glv2v")

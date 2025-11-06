@@ -23,14 +23,12 @@ func _build_battlefield():
 
 	# Main vertical container for title + positions (title at top, tiles centered below)
 	main_container = VBoxContainer.new()
-	main_container.add_theme_constant_override("separation", 16)
 	add_child(main_container)
 
 	# Add title at top
 	var title = Label.new()
 	title.text = "BATTLEFIELD"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 24)
 	main_container.add_child(title)
 
 	# Create a center container for tiles (expands to fill remaining space and centers vertically)
@@ -40,7 +38,6 @@ func _build_battlefield():
 
 	# Create horizontal container for position tiles
 	positions_container = HBoxContainer.new()
-	positions_container.add_theme_constant_override("separation", 12)
 	positions_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	tiles_center_container.add_child(positions_container)
 
@@ -54,14 +51,12 @@ func _setup_position_tiles():
 	for i in range(total_tiles):
 		# Create VBoxContainer for each position (label on top, tile below)
 		var position_vbox = VBoxContainer.new()
-		position_vbox.add_theme_constant_override("separation", 4)
 		position_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 
 		# Create entity indicator label (positioned above tile)
 		var label = Label.new()
 		label.text = ""
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 20)
 		label.custom_minimum_size = Vector2(96, 30)
 		position_vbox.add_child(label)
 		position_labels.append(label)

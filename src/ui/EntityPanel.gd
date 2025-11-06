@@ -13,7 +13,8 @@ var vigor_label: Label
 var vigor_bar: ProgressBar
 var stats_container: VBoxContainer
 var actions_separator: HSeparator
-var actions_container: VBoxContainer
+var basic_actions_container: VBoxContainer  # Left column: movement + end turn
+var attack_actions_container: VBoxContainer  # Right column: attacks/abilities
 var action_buttons: Array[Button] = []
 var move_forward_button: Button
 var move_backward_button: Button
@@ -31,18 +32,13 @@ func _ready():
 	_update_buttons()
 
 func _build_panel():
-	# Set minimum size for panel (slightly smaller for grid layout)
-	custom_minimum_size = Vector2(220, 400)
-
-	# Main vertical container
+	# Main vertical container (no fixed size, responsive)
 	var main_vbox = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 6)
 	add_child(main_vbox)
 
 	# === HEADER SECTION ===
 	title_label = Label.new()
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 14)
 	main_vbox.add_child(title_label)
 
 	# Spacer after title
@@ -50,11 +46,19 @@ func _build_panel():
 	title_spacer.custom_minimum_size = Vector2(0, 6)
 	main_vbox.add_child(title_spacer)
 
-	# === STATS SECTION ===
+	# === TOP ROW: STATS (LEFT) + EFFECTS (RIGHT) ===
+	var top_row_hbox = HBoxContainer.new()
+	top_row_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(top_row_hbox)
+
+	# LEFT COLUMN: Stats
+	var stats_vbox = VBoxContainer.new()
+	stats_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row_hbox.add_child(stats_vbox)
+
 	# HP Label
 	hp_label = Label.new()
-	hp_label.add_theme_font_size_override("font_size", 11)
-	main_vbox.add_child(hp_label)
+	stats_vbox.add_child(hp_label)
 
 	# HP Bar
 	hp_bar = ProgressBar.new()
@@ -62,12 +66,11 @@ func _build_panel():
 	hp_bar.entity_name = entity_name
 	hp_bar.show_percentage = false
 	hp_bar.custom_minimum_size = Vector2(0, 18)
-	main_vbox.add_child(hp_bar)
+	stats_vbox.add_child(hp_bar)
 
 	# Vigor Label
 	vigor_label = Label.new()
-	vigor_label.add_theme_font_size_override("font_size", 11)
-	main_vbox.add_child(vigor_label)
+	stats_vbox.add_child(vigor_label)
 
 	# Vigor Bar
 	vigor_bar = ProgressBar.new()
@@ -75,24 +78,36 @@ func _build_panel():
 	vigor_bar.entity_name = entity_name
 	vigor_bar.show_percentage = false
 	vigor_bar.custom_minimum_size = Vector2(0, 18)
-	main_vbox.add_child(vigor_bar)
+	stats_vbox.add_child(vigor_bar)
 
 	# Small spacer
 	var stats_spacer = Control.new()
 	stats_spacer.custom_minimum_size = Vector2(0, 3)
-	main_vbox.add_child(stats_spacer)
+	stats_vbox.add_child(stats_spacer)
 
 	# Base Stats
 	stats_container = VBoxContainer.new()
-	stats_container.add_theme_constant_override("separation", 1)
-	main_vbox.add_child(stats_container)
+	stats_vbox.add_child(stats_container)
 
 	var stat_names = ["STR", "DEX", "INT", "CON", "SPD", "LUCK"]
 	for stat_name in stat_names:
 		var stat_label = Label.new()
 		stat_label.name = stat_name
-		stat_label.add_theme_font_size_override("font_size", 10)
 		stats_container.add_child(stat_label)
+
+	# RIGHT COLUMN: Effects
+	var effects_vbox = VBoxContainer.new()
+	effects_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row_hbox.add_child(effects_vbox)
+
+	effects_title = Label.new()
+	effects_title.text = "EFFECTS"
+	effects_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	effects_vbox.add_child(effects_title)
+
+	effects_container = VBoxContainer.new()
+	effects_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	effects_vbox.add_child(effects_container)
 
 	# === ACTIONS SECTION ===
 	actions_separator = HSeparator.new()
@@ -101,46 +116,43 @@ func _build_panel():
 	var actions_title = Label.new()
 	actions_title.text = "ACTIONS"
 	actions_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	actions_title.add_theme_font_size_override("font_size", 12)
 	main_vbox.add_child(actions_title)
 
-	actions_container = VBoxContainer.new()
-	actions_container.add_theme_constant_override("separation", 3)
-	main_vbox.add_child(actions_container)
+	# Two-column action layout
+	var actions_hbox = HBoxContainer.new()
+	actions_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(actions_hbox)
+
+	# LEFT COLUMN: Basic actions (movement only)
+	basic_actions_container = VBoxContainer.new()
+	basic_actions_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions_hbox.add_child(basic_actions_container)
 
 	# Movement buttons
 	move_forward_button = Button.new()
-	move_forward_button.text = "Move Forward"
+	move_forward_button.text = "Move Fwd"
 	move_forward_button.pressed.connect(_on_move_forward_pressed)
-	actions_container.add_child(move_forward_button)
+	basic_actions_container.add_child(move_forward_button)
 
 	move_backward_button = Button.new()
-	move_backward_button.text = "Move Backward"
+	move_backward_button.text = "Move Back"
 	move_backward_button.pressed.connect(_on_move_backward_pressed)
-	actions_container.add_child(move_backward_button)
+	basic_actions_container.add_child(move_backward_button)
 
-	# Done turn button
-	done_turn_button = Button.new()
-	done_turn_button.text = "End Turn"
-	done_turn_button.pressed.connect(_on_done_turn_pressed)
-	actions_container.add_child(done_turn_button)
+	# RIGHT COLUMN: Attack/ability actions
+	attack_actions_container = VBoxContainer.new()
+	attack_actions_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	actions_hbox.add_child(attack_actions_container)
 
 	# Attack buttons will be added dynamically
 	_rebuild_action_buttons()
 
-	# === EFFECTS SECTION ===
-	effects_separator = HSeparator.new()
-	main_vbox.add_child(effects_separator)
-
-	effects_title = Label.new()
-	effects_title.text = "EFFECTS"
-	effects_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	effects_title.add_theme_font_size_override("font_size", 12)
-	main_vbox.add_child(effects_title)
-
-	effects_container = VBoxContainer.new()
-	effects_container.add_theme_constant_override("separation", 2)
-	main_vbox.add_child(effects_container)
+	# === END TURN SECTION (separate row at bottom) ===
+	done_turn_button = Button.new()
+	done_turn_button.text = "End Turn"
+	done_turn_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	done_turn_button.pressed.connect(_on_done_turn_pressed)
+	main_vbox.add_child(done_turn_button)
 
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Handle both player and enemy state changes
@@ -233,7 +245,6 @@ func _update_effects():
 		var no_effects = Label.new()
 		no_effects.text = "(None)"
 		no_effects.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		no_effects.add_theme_font_size_override("font_size", 10)
 		effects_container.add_child(no_effects)
 	else:
 		for effect in active_effects:
@@ -246,7 +257,6 @@ func _add_effect_display(effect: EffectState):
 	# Effect name + duration
 	var name_label = Label.new()
 	name_label.text = "%s (%d)" % [effect_name, effect.remaining_duration]
-	name_label.add_theme_font_size_override("font_size", 10)
 	effects_container.add_child(name_label)
 
 	# Effect details
@@ -254,7 +264,6 @@ func _add_effect_display(effect: EffectState):
 	if not details.is_empty():
 		var details_label = Label.new()
 		details_label.text = "  " + details
-		details_label.add_theme_font_size_override("font_size", 9)
 		effects_container.add_child(details_label)
 
 func _format_effect_details(effect: EffectState) -> String:
@@ -304,10 +313,7 @@ func _rebuild_action_buttons():
 	if equipped_attacks == null:
 		return
 
-	# Create button for each equipped attack
-	# Insert at beginning of actions_container
-	var insert_index = 0
-
+	# Create button for each equipped attack in right column (attack_actions_container)
 	for action_id in equipped_attacks:
 		var action_data = AttackDatabase.get_action(action_id)
 		if action_data == null:
@@ -315,12 +321,9 @@ func _rebuild_action_buttons():
 
 		var button = Button.new()
 		button.text = "%s (%d-%d)" % [action_data.action_name, action_data.min_range, action_data.max_range]
-		button.add_theme_font_size_override("font_size", 10)
 		button.pressed.connect(_on_action_button_pressed.bind(action_id))
 
-		actions_container.add_child(button)
-		actions_container.move_child(button, insert_index)
-		insert_index += 1
+		attack_actions_container.add_child(button)
 		action_buttons.append(button)
 
 func _update_buttons():

@@ -8,7 +8,7 @@ extends Control
 
 var player_panel: PanelContainer
 var battlefield_display: PanelContainer
-var enemy_grid_display: ScrollContainer
+var enemy_grid_display: PanelContainer
 var turn_indicator: Label
 
 func _ready():
@@ -33,22 +33,16 @@ func _build_ui():
 	var margin_container = MarginContainer.new()
 	margin_container.anchor_right = 1.0
 	margin_container.anchor_bottom = 1.0
-	margin_container.add_theme_constant_override("margin_left", 16)
-	margin_container.add_theme_constant_override("margin_top", 16)
-	margin_container.add_theme_constant_override("margin_right", 16)
-	margin_container.add_theme_constant_override("margin_bottom", 16)
 	add_child(margin_container)
 
 	# Main vertical container (top/bottom split)
 	var main_vbox = VBoxContainer.new()
-	main_vbox.add_theme_constant_override("separation", 16)
 	margin_container.add_child(main_vbox)
 
 	# === TURN INDICATOR (Top, full width) ===
 	turn_indicator = Label.new()
 	turn_indicator.set_script(preload("res://src/ui/TurnIndicator.gd"))
 	turn_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	turn_indicator.add_theme_font_size_override("font_size", 18)
 	turn_indicator.custom_minimum_size = Vector2(0, 32)
 	main_vbox.add_child(turn_indicator)
 
@@ -62,7 +56,6 @@ func _build_ui():
 
 	# === BOTTOM SECTION: Player (left) and Enemies (right) ===
 	var bottom_hbox = HBoxContainer.new()
-	bottom_hbox.add_theme_constant_override("separation", 16)
 	bottom_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bottom_hbox.size_flags_stretch_ratio = 1.2  # Slightly more space than battlefield
 	main_vbox.add_child(bottom_hbox)
@@ -76,8 +69,8 @@ func _build_ui():
 	player_panel.size_flags_stretch_ratio = 2.0  # 40% (2 out of 5 total)
 	bottom_hbox.add_child(player_panel)
 
-	# RIGHT: Enemy Row Display (60% of bottom width)
-	enemy_grid_display = ScrollContainer.new()
+	# RIGHT: Enemy Grid Display (60% of bottom width)
+	enemy_grid_display = PanelContainer.new()
 	enemy_grid_display.set_script(preload("res://src/ui/EnemyGridDisplay.gd"))
 	enemy_grid_display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	enemy_grid_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
