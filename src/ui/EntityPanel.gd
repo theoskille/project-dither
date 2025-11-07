@@ -22,6 +22,8 @@ var done_turn_button: Button
 var effects_separator: HSeparator
 var effects_title: Label
 var effects_container: VBoxContainer
+var passives_title: Label
+var passives_container: VBoxContainer
 var target_selection_panel: VBoxContainer = null
 var pending_action_id: String = ""
 
@@ -109,6 +111,22 @@ func _build_panel():
 	effects_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	effects_vbox.add_child(effects_container)
 
+	# Small spacer between effects and passives
+	var passives_spacer = Control.new()
+	passives_spacer.custom_minimum_size = Vector2(0, 8)
+	effects_vbox.add_child(passives_spacer)
+
+	# Passives title
+	passives_title = Label.new()
+	passives_title.text = "PASSIVES"
+	passives_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	effects_vbox.add_child(passives_title)
+
+	# Passives container
+	passives_container = VBoxContainer.new()
+	passives_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	effects_vbox.add_child(passives_container)
+
 	# === ACTIONS SECTION ===
 	actions_separator = HSeparator.new()
 	main_vbox.add_child(actions_separator)
@@ -189,6 +207,14 @@ func _on_state_changed(property_path: String, _old_value, _new_value):
 		if property_path == "enemies.%d.active_effects" % index:
 			_update_effects()
 
+	# Update passives display
+	if is_player and property_path == "player_state.passive_abilities":
+		_update_passives()
+	elif is_enemy:
+		var index = int(entity_name.split("_")[1])
+		if property_path == "enemies.%d.passive_abilities" % index:
+			_update_passives()
+
 func _get_entity() -> EntityState:
 	if entity_name == "player":
 		return BattleStateStore.battle_state.player_state
@@ -229,6 +255,9 @@ func _update_display():
 
 	# Update effects
 	_update_effects()
+
+	# Update passives
+	_update_passives()
 
 func _update_effects():
 	# Clear existing effects
@@ -294,6 +323,47 @@ func _format_effect_details(effect: EffectState) -> String:
 		parts.append("Blocks: " + ", ".join(effect.blocks_action_types))
 
 	return ", ".join(parts)
+
+func _update_passives():
+	# Clear existing passive displays
+	for child in passives_container.get_children():
+		child.queue_free()
+
+	var entity = _get_entity()
+	if not entity:
+		return
+
+	var passive_abilities = entity.passive_abilities
+
+	if passive_abilities.is_empty():
+		var no_passives = Label.new()
+		no_passives.text = "(None)"
+		no_passives.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		passives_container.add_child(no_passives)
+	else:
+		for passive_id in passive_abilities:
+			_add_passive_display(passive_id)
+
+func _add_passive_display(passive_id: String):
+	var passive = PassiveAbilityDatabase.get_passive(passive_id)
+	if not passive:
+		var error_label = Label.new()
+		error_label.text = "Unknown: %s" % passive_id
+		passives_container.add_child(error_label)
+		return
+
+	# Passive name label
+	var name_label = Label.new()
+	name_label.text = passive.passive_name
+	passives_container.add_child(name_label)
+
+	# Passive description (smaller font)
+	if not passive.description.is_empty():
+		var desc_label = Label.new()
+		desc_label.text = "  " + passive.description  # Indent
+		desc_label.add_theme_font_size_override("font_size", 10)
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		passives_container.add_child(desc_label)
 
 func _rebuild_action_buttons():
 	# Clear existing action buttons

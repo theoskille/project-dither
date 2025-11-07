@@ -131,6 +131,7 @@ func add_enemy_to_battle(enemy_data: EnemyData, position: int):
 	entity_state.current_vigor = enemy_data.max_vigor
 	entity_state.base_stats = enemy_data.base_stats.duplicate()
 	entity_state.equipped_attacks = enemy_data.equipped_attacks.duplicate()
+	entity_state.passive_abilities = enemy_data.passive_abilities.duplicate()
 	entity_state.position = position
 
 	# Use properly typed array

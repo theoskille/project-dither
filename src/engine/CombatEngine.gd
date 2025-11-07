@@ -29,7 +29,12 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	if damage > 0:
 		var target_entity = _get_entity_by_id(target_id)
 		if target_entity:
-			BattleStateMutations.set_entity_hp(target_id, max(0, target_entity.current_hp - damage))
+			var new_hp = max(0, target_entity.current_hp - damage)
+			BattleStateMutations.set_entity_hp(target_id, new_hp)
+
+			# Check for death and trigger on_kill passives
+			if new_hp == 0:
+				_trigger_passives(caster_id, "on_kill", target_id)
 
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
@@ -68,8 +73,13 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 		if collision_damage > 0:
 			var collision_target = _get_entity_by_id(collision_entity_id)
 			if collision_target:
-				BattleStateMutations.set_entity_hp(collision_entity_id, max(0, collision_target.current_hp - collision_damage))
+				var new_hp = max(0, collision_target.current_hp - collision_damage)
+				BattleStateMutations.set_entity_hp(collision_entity_id, new_hp)
 				print("CombatEngine: Collision damage applied to %s: %d damage" % [collision_entity_id, collision_damage])
+
+				# Check for death from collision damage
+				if new_hp == 0:
+					_trigger_passives(caster_id, "on_kill", collision_entity_id)
 
 	# Move target if specified (relative to caster position)
 	if action_data.move_target != 0:
@@ -384,3 +394,38 @@ func _decrement_effect_durations():
 		for i in range(entity.active_effects.size() - 1, -1, -1):
 			if entity.active_effects[i].remaining_duration <= 0:
 				BattleStateMutations.remove_effect_from_entity(entity_id, i)
+
+func _trigger_passives(entity_id: String, trigger_type: String, context_target: String = ""):
+	"""
+	Triggers passive abilities for an entity based on a trigger type.
+	Engine layer orchestration: checks which passives to trigger, then calls mutations.
+	"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	# Check each passive ability on this entity
+	for passive_id in entity.passive_abilities:
+		var passive = PassiveAbilityDatabase.get_passive(passive_id)
+		if passive == null:
+			push_warning("CombatEngine: Passive ability '%s' not found in database" % passive_id)
+			continue
+
+		# Check if this passive triggers on this event
+		if passive.trigger_type != trigger_type:
+			continue
+
+		# Execute passive effects via mutations layer
+		if passive.vigor_restore > 0:
+			BattleStateMutations.restore_vigor(entity_id, passive.vigor_restore)
+			print("CombatEngine: Passive '%s' triggered for %s! +%d vigor" % [passive.passive_name, entity_id, passive.vigor_restore])
+
+		if passive.heal_amount > 0:
+			var current_hp = entity.current_hp
+			var healed_hp = min(entity.max_hp, current_hp + passive.heal_amount)
+			BattleStateMutations.set_entity_hp(entity_id, healed_hp)
+			print("CombatEngine: Passive '%s' triggered for %s! +%d HP" % [passive.passive_name, entity_id, passive.heal_amount])
+
+		if passive.applies_effect_id != "":
+			_apply_effect_to_entity(entity_id, passive.applies_effect_id)
+			print("CombatEngine: Passive '%s' triggered for %s! Applied effect '%s'" % [passive.passive_name, entity_id, passive.applies_effect_id])

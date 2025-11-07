@@ -10,4 +10,5 @@ extends Resource
 @export var base_stats: Dictionary = {"str": 10, "dex": 8, "int": 12, "con": 9, "spd": 7, "luck": 5}
 @export var active_effects: Array[EffectState] = []
 @export var equipped_attacks: Array[String] = ["slash", "magic_bolt", "dash_strike", "knockback_strike"]
+@export var passive_abilities: Array[String] = ["bloodthirst"]
 @export var sprite_path: String = ""

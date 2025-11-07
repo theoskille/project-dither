@@ -24,6 +24,7 @@ window/size/mode=3
 AttackDatabase="*res://src/data/AttackDatabase.gd"
 EnemyDatabase="*res://src/data/EnemyDatabase.gd"
 EffectDatabase="*res://src/data/EffectDatabase.gd"
+PassiveAbilityDatabase="*res://src/data/PassiveAbilityDatabase.gd"
 BattleStateStore="*res://src/store/BattleStateStore.gd"
 BattleStateMutations="*res://src/mutations/BattleStateMutations.gd"
 CombatEngine="*res://src/engine/CombatEngine.gd"
