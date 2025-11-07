@@ -16,5 +16,6 @@ extends Resource
 @export var max_range: int = 999
 @export var move_caster: int = 0
 @export var move_target: int = 0
+@export var stop_on_collision: bool = false  # If true, caster movement stops when colliding with enemy
 @export var applies_effect_id: String = ""
 @export var effect_duration_override: int = 0  # 0 = use effect template's base_duration

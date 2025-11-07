@@ -112,7 +112,7 @@ func _update_display():
 				sprite.texture = load(enemy.sprite_path)
 			else:
 				# Fallback: use default goblin sprite
-				sprite.texture = load("res://assets/sprites/dungeon_creature_goblin_ears_transparent.png")
+				sprite.texture = load("res://assets/sprites/dungeon_creature_goblin_ears_cutout.png")
 
 			# Configure sprite rendering
 			sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

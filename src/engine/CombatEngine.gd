@@ -34,12 +34,42 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
 
+	# Track collision entity for damage application
+	var collision_entity_id = ""
+
 	# Move caster if specified
 	if action_data.move_caster != 0:
 		var caster_entity = _get_entity_by_id(caster_id)
 		if caster_entity:
-			var new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
+			var new_pos = 0
+
+			# Check for collision-based movement
+			if action_data.stop_on_collision:
+				collision_entity_id = _find_collision_entity(caster_id, caster_entity.position, action_data.move_caster)
+
+				if collision_entity_id != "":
+					# Collision detected - move to collision entity's position
+					var collision_entity = _get_entity_by_id(collision_entity_id)
+					new_pos = collision_entity.position
+					print("CombatEngine: %s dashed and collided with %s at position %d" % [caster_id, collision_entity_id, new_pos])
+				else:
+					# No collision - move full distance (clamped to boundaries)
+					new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
+					print("CombatEngine: %s dashed full distance to position %d (no collision)" % [caster_id, new_pos])
+			else:
+				# Normal movement without collision detection
+				new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
+
 			BattleStateMutations.set_entity_position(caster_id, new_pos)
+
+	# Apply collision damage if a collision occurred
+	if collision_entity_id != "":
+		var collision_damage = _calculate_damage_from_action(action_data, caster_id)
+		if collision_damage > 0:
+			var collision_target = _get_entity_by_id(collision_entity_id)
+			if collision_target:
+				BattleStateMutations.set_entity_hp(collision_entity_id, max(0, collision_target.current_hp - collision_damage))
+				print("CombatEngine: Collision damage applied to %s: %d damage" % [collision_entity_id, collision_damage])
 
 	# Move target if specified (relative to caster position)
 	if action_data.move_target != 0:
@@ -173,6 +203,41 @@ func _get_distance_between_entities(entity1_id: String, entity2_id: String) -> i
 		return 999  # Return large distance if entity not found
 
 	return abs(entity1.position - entity2.position)
+
+func _find_collision_entity(caster_id: String, start_position: int, movement: int) -> String:
+	"""
+	Finds the nearest entity in the movement path during a dash.
+	Returns the entity_id of the first enemy encountered, or empty string if no collision.
+	"""
+	if movement == 0:
+		return ""
+
+	var direction = sign(movement)
+	var distance = abs(movement)
+
+	# Get all entities to check for collisions
+	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
+	var nearest_entity = ""
+	var nearest_distance = distance + 1  # Start beyond max dash distance
+
+	# Check each tile in the dash path
+	for i in range(1, distance + 1):
+		var check_position = start_position + (direction * i)
+
+		# Check if any entity is at this position
+		for entity_id in turn_order:
+			if entity_id == caster_id:
+				continue  # Skip the caster
+
+			var entity = _get_entity_by_id(entity_id)
+			if entity and entity.position == check_position:
+				# Found an entity closer than previous finds
+				if i < nearest_distance:
+					nearest_entity = entity_id
+					nearest_distance = i
+					return nearest_entity  # Return immediately (stop at first collision)
+
+	return nearest_entity
 
 func _get_entity_by_id(entity_id: String) -> EntityState:
 	if entity_id == "player":
