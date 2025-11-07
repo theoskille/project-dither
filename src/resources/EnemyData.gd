@@ -14,3 +14,4 @@ extends Resource
 	"luck": 10
 }
 @export var equipped_attacks: Array[String] = []
+@export var sprite_path: String = ""

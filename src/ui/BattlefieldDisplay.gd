@@ -2,7 +2,8 @@ extends PanelContainer
 
 # Horizontal battlefield display spanning upper half of screen
 
-@onready var position_labels = []
+@onready var position_labels = []  # For player text
+@onready var position_sprite_containers = []  # For enemy sprites
 @onready var position_containers = []
 var main_container: VBoxContainer
 var positions_container: HBoxContainer
@@ -49,16 +50,24 @@ func _on_state_changed(property_path: String, _old_value, _new_value):
 func _setup_position_tiles():
 	var total_tiles = BattleStateStore.get_state_value("battlefield.total_tiles")
 	for i in range(total_tiles):
-		# Create VBoxContainer for each position (label on top, tile below)
+		# Create VBoxContainer for each position (sprites/label on top, tile below)
 		var position_vbox = VBoxContainer.new()
 		position_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 
-		# Create entity indicator label (positioned above tile)
+		# Create container for entity sprites/labels (positioned above tile)
+		var entity_container = Control.new()
+		entity_container.custom_minimum_size = Vector2(96, 96)
+		position_vbox.add_child(entity_container)
+		position_sprite_containers.append(entity_container)
+
+		# Create player label (will be shown when player is on this tile)
 		var label = Label.new()
 		label.text = ""
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.custom_minimum_size = Vector2(96, 30)
-		position_vbox.add_child(label)
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.custom_minimum_size = Vector2(96, 20)
+		label.position = Vector2(0, 0)
+		entity_container.add_child(label)
 		position_labels.append(label)
 
 		# Create tile sprite
@@ -77,22 +86,46 @@ func _update_display():
 	for i in range(position_labels.size()):
 		position_labels[i].text = ""
 
+	# Clear all enemy sprites
+	for container in position_sprite_containers:
+		# Remove all children except the player label (which is always first child)
+		for child in container.get_children():
+			if child is TextureRect:
+				child.queue_free()
+
 	# Show player
 	var player_pos = BattleStateStore.get_state_value("player_state.position")
 	if player_pos >= 0 and player_pos < position_labels.size():
 		position_labels[player_pos].text = "P"
 
-	# Show all enemies
+	# Show all enemies as sprites
 	var enemies = BattleStateStore.battle_state.enemies
 	for i in range(enemies.size()):
-		var enemy_pos = enemies[i].position
-		if enemy_pos >= 0 and enemy_pos < position_labels.size():
-			# If multiple enemies on same tile, show count or concatenate
-			if position_labels[enemy_pos].text == "":
-				position_labels[enemy_pos].text = "E%d" % i
-			elif position_labels[enemy_pos].text.begins_with("E"):
-				# Multiple enemies on same tile - show as E0,E1
-				position_labels[enemy_pos].text = "%s,E%d" % [position_labels[enemy_pos].text, i]
-			elif position_labels[enemy_pos].text == "P":
-				# Player and enemy on same tile
-				position_labels[enemy_pos].text = "P,E%d" % i
+		var enemy = enemies[i]
+		var enemy_pos = enemy.position
+		if enemy_pos >= 0 and enemy_pos < position_sprite_containers.size():
+			# Create sprite for this enemy
+			var sprite = TextureRect.new()
+
+			# Load the sprite texture
+			if enemy.sprite_path != "" and ResourceLoader.exists(enemy.sprite_path):
+				sprite.texture = load(enemy.sprite_path)
+			else:
+				# Fallback: use default goblin sprite
+				sprite.texture = load("res://assets/sprites/dungeon_creature_goblin_ears_transparent.png")
+
+			# Configure sprite rendering
+			sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			sprite.custom_minimum_size = Vector2(96, 96)
+
+			# Position sprite in container (stack multiple enemies if needed)
+			var existing_sprites = 0
+			for child in position_sprite_containers[enemy_pos].get_children():
+				if child is TextureRect:
+					existing_sprites += 1
+
+			# Offset multiple enemies slightly so they're visible
+			sprite.position = Vector2(existing_sprites * 10, 0)
+
+			position_sprite_containers[enemy_pos].add_child(sprite)
