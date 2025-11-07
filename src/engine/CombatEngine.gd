@@ -230,8 +230,8 @@ func _find_collision_entity(caster_id: String, start_position: int, movement: in
 	var nearest_entity = ""
 	var nearest_distance = distance + 1  # Start beyond max dash distance
 
-	# Check each tile in the dash path
-	for i in range(1, distance + 1):
+	# Check each tile in the dash path (including current position)
+	for i in range(0, distance + 1):
 		var check_position = start_position + (direction * i)
 
 		# Check if any entity is at this position
