@@ -357,14 +357,6 @@ func _add_passive_display(passive_id: String):
 	name_label.text = passive.passive_name
 	passives_container.add_child(name_label)
 
-	# Passive description (smaller font)
-	if not passive.description.is_empty():
-		var desc_label = Label.new()
-		desc_label.text = "  " + passive.description  # Indent
-		desc_label.add_theme_font_size_override("font_size", 10)
-		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		passives_container.add_child(desc_label)
-
 func _rebuild_action_buttons():
 	# Clear existing action buttons
 	for button in action_buttons:
