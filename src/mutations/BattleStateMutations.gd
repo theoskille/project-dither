@@ -143,3 +143,50 @@ func add_enemy_to_battle(enemy_data: EnemyData, position: int):
 
 	# Emit signal for new enemy added
 	BattleStateStore._emit_change("enemies.%d" % enemy_index, null, entity_state)
+
+# Clear all enemies from battle
+func clear_enemies():
+	var old_enemies = BattleStateStore.battle_state.enemies
+	BattleStateStore.battle_state.enemies = []
+	BattleStateStore._emit_change("enemies", old_enemies, [])
+	print("BattleStateMutations: Cleared all enemies")
+
+# Reset turn state to defaults
+func reset_turn_state():
+	var turn_state = BattleStateStore.battle_state.turn_state
+	var old_order = turn_state.turn_order
+	var old_index = turn_state.current_turn_index
+	var old_number = turn_state.current_turn_number
+	var old_phase = turn_state.phase
+
+	# Use properly typed array for turn_order
+	var empty_order: Array[String] = []
+	turn_state.turn_order = empty_order
+	turn_state.current_turn_index = 0
+	turn_state.current_turn_number = 1
+	turn_state.phase = "action"
+
+	BattleStateStore._emit_change("turn_state.turn_order", old_order, empty_order)
+	BattleStateStore._emit_change("turn_state.current_turn_index", old_index, 0)
+	BattleStateStore._emit_change("turn_state.current_turn_number", old_number, 1)
+	BattleStateStore._emit_change("turn_state.phase", old_phase, "action")
+	print("BattleStateMutations: Reset turn state")
+
+# Reset player to default state
+func reset_player():
+	var player = BattleStateStore.battle_state.player_state
+
+	# Reset stats to defaults
+	player.current_hp = player.max_hp
+	player.current_vigor = player.max_vigor
+	player.position = 0
+
+	# Use properly typed array for active_effects
+	var empty_effects: Array[EffectState] = []
+	player.active_effects = empty_effects
+
+	BattleStateStore._emit_change("player_state.current_hp", null, player.max_hp)
+	BattleStateStore._emit_change("player_state.current_vigor", null, player.max_vigor)
+	BattleStateStore._emit_change("player_state.position", null, 0)
+	BattleStateStore._emit_change("player_state.active_effects", null, empty_effects)
+	print("BattleStateMutations: Reset player to defaults")

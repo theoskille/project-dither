@@ -25,9 +25,13 @@ AttackDatabase="*res://src/data/AttackDatabase.gd"
 EnemyDatabase="*res://src/data/EnemyDatabase.gd"
 EffectDatabase="*res://src/data/EffectDatabase.gd"
 PassiveAbilityDatabase="*res://src/data/PassiveAbilityDatabase.gd"
+EncounterDatabase="*res://src/data/EncounterDatabase.gd"
 BattleStateStore="*res://src/store/BattleStateStore.gd"
 BattleStateMutations="*res://src/mutations/BattleStateMutations.gd"
 CombatEngine="*res://src/engine/CombatEngine.gd"
+DungeonStateStore="*res://src/store/DungeonStateStore.gd"
+DungeonStateMutations="*res://src/mutations/DungeonStateMutations.gd"
+DungeonEngine="*res://src/engine/DungeonEngine.gd"
 
 [rendering]
 

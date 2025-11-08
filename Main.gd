@@ -1,82 +1,87 @@
 extends Control
 
-# Responsive top/bottom split combat UI layout
-# Top: Turn Indicator + Horizontal Battlefield (takes ~45% of height)
-# Bottom: Player Panel (40% width) | Enemy Row (60% width)
-# Uses size_flags_stretch_ratio for proportional scaling
-# All panels are responsive and will resize with window
+## Main scene manager
+## Handles transitions between dungeon exploration and combat
 
-var player_panel: PanelContainer
-var battlefield_display: PanelContainer
-var enemy_grid_display: PanelContainer
-var turn_indicator: Label
+enum GameMode { DUNGEON, COMBAT }
+
+var current_mode: GameMode = GameMode.DUNGEON
+var current_view: Control = null
+
+var dungeon_view: Control
+var combat_view: Control
 
 func _ready():
-	# Initialize battle with multiple enemies
-	var enemy_configs = [
-		{"enemy_id": "goblin", "position": 5},
-		{"enemy_id": "orc", "position": 7}
-	]
-	CombatEngine.initialize_enemies(enemy_configs)
-	CombatEngine.start_battle()
-
-	# Build UI
-	_build_ui()
-	_connect_signals()
-
-func _build_ui():
-	# Set anchors to fill the screen (responsive)
+	# Set anchors to fill the screen
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 
-	# Root margin container for padding from screen edges
-	var margin_container = MarginContainer.new()
-	margin_container.anchor_right = 1.0
-	margin_container.anchor_bottom = 1.0
-	add_child(margin_container)
+	# Connect to engine signals
+	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
+	CombatEngine.battle_ended.connect(_on_battle_ended)
 
-	# Main vertical container (top/bottom split)
-	var main_vbox = VBoxContainer.new()
-	margin_container.add_child(main_vbox)
+	# Start in dungeon mode
+	DungeonEngine.start_dungeon()
+	_switch_to_dungeon_view()
 
-	# === TURN INDICATOR (Top, full width) ===
-	turn_indicator = Label.new()
-	turn_indicator.set_script(preload("res://src/ui/TurnIndicator.gd"))
-	turn_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	turn_indicator.custom_minimum_size = Vector2(0, 32)
-	main_vbox.add_child(turn_indicator)
+func _switch_to_dungeon_view():
+	print("Main: Switching to dungeon view")
 
-	# === TOP SECTION: Battlefield (horizontal) ===
-	battlefield_display = PanelContainer.new()
-	battlefield_display.set_script(preload("res://src/ui/BattlefieldDisplay.gd"))
-	battlefield_display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	battlefield_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	battlefield_display.size_flags_stretch_ratio = 1.0  # Takes up space
-	main_vbox.add_child(battlefield_display)
+	# Remove current view if it exists
+	if current_view:
+		remove_child(current_view)
+		current_view.queue_free()
 
-	# === BOTTOM SECTION: Player (left) and Enemies (right) ===
-	var bottom_hbox = HBoxContainer.new()
-	bottom_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	bottom_hbox.size_flags_stretch_ratio = 1.2  # Slightly more space than battlefield
-	main_vbox.add_child(bottom_hbox)
+	# Create dungeon view
+	dungeon_view = Control.new()
+	dungeon_view.set_script(preload("res://src/ui/DungeonView.gd"))
+	add_child(dungeon_view)
 
-	# LEFT: Player Panel (40% of bottom width)
-	player_panel = PanelContainer.new()
-	player_panel.set_script(preload("res://src/ui/PlayerPanel.gd"))
-	player_panel.entity_name = "player"
-	player_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	player_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	player_panel.size_flags_stretch_ratio = 2.0  # 40% (2 out of 5 total)
-	bottom_hbox.add_child(player_panel)
+	current_view = dungeon_view
+	current_mode = GameMode.DUNGEON
 
-	# RIGHT: Enemy Grid Display (60% of bottom width)
-	enemy_grid_display = PanelContainer.new()
-	enemy_grid_display.set_script(preload("res://src/ui/EnemyGridDisplay.gd"))
-	enemy_grid_display.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	enemy_grid_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	enemy_grid_display.size_flags_stretch_ratio = 3.0  # 60% (3 out of 5 total)
-	bottom_hbox.add_child(enemy_grid_display)
+func _switch_to_combat_view(encounter_id: String):
+	print("Main: Switching to combat view for encounter: %s" % encounter_id)
 
-func _connect_signals():
-	# No signals to connect - EntityActionPanels handle their own signals
-	pass
+	# Remove current view if it exists
+	if current_view:
+		remove_child(current_view)
+		current_view.queue_free()
+
+	# Get encounter data
+	var encounter = EncounterDatabase.get_encounter(encounter_id)
+	if not encounter:
+		push_error("Main: Failed to load encounter '%s'" % encounter_id)
+		_switch_to_dungeon_view()
+		return
+
+	# CRITICAL: Reset battle state before starting new encounter
+	CombatEngine.reset_battle()
+
+	# Create combat view (but don't add to tree yet)
+	combat_view = Control.new()
+	combat_view.set_script(preload("res://src/ui/CombatView.gd"))
+
+	# Initialize combat state BEFORE adding to tree
+	# This ensures battle state is populated before UI components try to read it
+	combat_view.initialize_combat(encounter.enemy_configs)
+
+	# Now add to tree - this triggers _ready() and UI building
+	add_child(combat_view)
+
+	current_view = combat_view
+	current_mode = GameMode.COMBAT
+
+func _on_encounter_triggered(encounter_id: String):
+	print("Main: Encounter triggered: %s" % encounter_id)
+	_switch_to_combat_view(encounter_id)
+
+func _on_battle_ended():
+	print("Main: Battle ended, returning to dungeon")
+
+	# Clear the encounter from the current room
+	var current_room_id = DungeonStateStore.current_room_id
+	DungeonStateMutations.clear_room_encounter(current_room_id)
+
+	# Switch back to dungeon view
+	_switch_to_dungeon_view()

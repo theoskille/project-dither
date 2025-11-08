@@ -1,5 +1,16 @@
 extends Node
 
+## Signals
+signal battle_ended()  # Emitted when all enemies are defeated
+
+# Reset battle state to clean slate (call before starting new encounter)
+func reset_battle():
+	print("CombatEngine: Resetting battle state")
+	BattleStateMutations.clear_enemies()
+	BattleStateMutations.reset_turn_state()
+	BattleStateMutations.reset_player()
+	print("CombatEngine: Battle state reset complete")
+
 func initialize_enemies(enemy_configs: Array):
 	for config in enemy_configs:
 		var enemy_id = config.get("enemy_id", "")
@@ -35,6 +46,7 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			# Check for death and trigger on_kill passives
 			if new_hp == 0:
 				_trigger_passives(caster_id, "on_kill", target_id)
+				_check_victory()
 
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
@@ -80,6 +92,7 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 				# Check for death from collision damage
 				if new_hp == 0:
 					_trigger_passives(caster_id, "on_kill", collision_entity_id)
+					_check_victory()
 
 	# Move target if specified (relative to caster position)
 	if action_data.move_target != 0:
@@ -429,3 +442,20 @@ func _trigger_passives(entity_id: String, trigger_type: String, context_target: 
 		if passive.applies_effect_id != "":
 			_apply_effect_to_entity(entity_id, passive.applies_effect_id)
 			print("CombatEngine: Passive '%s' triggered for %s! Applied effect '%s'" % [passive.passive_name, entity_id, passive.applies_effect_id])
+
+# Check if all enemies are defeated
+func _check_victory():
+	var enemies = BattleStateStore.battle_state.enemies
+	var all_dead = true
+
+	for enemy in enemies:
+		if enemy.current_hp > 0:
+			all_dead = false
+			break
+
+	if all_dead and enemies.size() > 0:
+		print("CombatEngine: All enemies defeated! Victory!")
+		battle_ended.emit()
+		return true
+
+	return false
