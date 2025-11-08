@@ -7,25 +7,134 @@ extends Node
 signal encounter_triggered(encounter_id: String)
 signal dungeon_completed()
 
-# Generate a simple linear dungeon (rooms in a straight east-west line)
-func generate_linear_dungeon(room_count: int = 4):
+var _exit_room_id: String = ""  # Tracks the designated exit room
+
+# Generate a sparse grid-based maze dungeon (organic layout using grow-and-branch)
+func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float = 0.55):
 	var rooms_dict = {}
 
 	# Define available encounters for random assignment
 	var available_encounters = ["goblin_ambush", "orc_patrol", "single_goblin", ""]  # "" = no encounter
 
-	for i in range(room_count):
-		var room = DungeonStateStore.Room.new("room_%d" % i)
+	# Step 1: Grow dungeon organically using "grow-and-branch" algorithm
+	var total_positions = rows * cols
+	var target_room_count = int(total_positions * fill_percentage)
+	var selected_positions = {}
+	var frontier = []  # Positions we can potentially grow from
 
-		# Set connections (east-west line)
-		if i > 0:
-			room.connections["west"] = "room_%d" % (i - 1)
-		if i < room_count - 1:
-			room.connections["east"] = "room_%d" % (i + 1)
+	# Start at (0,0)
+	var start_pos = Vector2i(0, 0)
+	selected_positions[start_pos] = true
+	frontier.append(start_pos)
 
-		# Assign encounters (first room always safe, others may have encounters)
-		if i == 0:
-			room.encounter_id = ""  # Starting room is safe
+	# Grow the dungeon by adding adjacent rooms
+	while selected_positions.size() < target_room_count and frontier.size() > 0:
+		# Pick a random position from frontier to grow from
+		var frontier_index = randi() % frontier.size()
+		var current_pos = frontier[frontier_index]
+
+		# Get all unselected neighbors (N, S, E, W)
+		var neighbor_offsets = [
+			Vector2i(0, -1),  # North
+			Vector2i(0, 1),   # South
+			Vector2i(1, 0),   # East
+			Vector2i(-1, 0)   # West
+		]
+
+		var available_neighbors = []
+		for offset in neighbor_offsets:
+			var neighbor_pos = current_pos + offset
+			# Check if in bounds and not already selected
+			if neighbor_pos.x >= 0 and neighbor_pos.x < cols and neighbor_pos.y >= 0 and neighbor_pos.y < rows:
+				if not selected_positions.has(neighbor_pos):
+					available_neighbors.append(neighbor_pos)
+
+		if available_neighbors.size() > 0:
+			# Add a random neighbor to the dungeon
+			var new_pos = available_neighbors[randi() % available_neighbors.size()]
+			selected_positions[new_pos] = true
+			frontier.append(new_pos)
+
+			# 60% chance to keep current position in frontier (allows branching)
+			# 40% chance to remove it (creates more linear paths)
+			if randf() > 0.6:
+				frontier.remove_at(frontier_index)
+		else:
+			# No available neighbors, remove from frontier (dead end)
+			frontier.remove_at(frontier_index)
+
+	# Step 2: Create rooms only for selected positions
+	for pos in selected_positions.keys():
+		var room_id = "room_%d_%d" % [pos.y, pos.x]
+		var room = DungeonStateStore.Room.new(room_id)
+		rooms_dict[room_id] = room
+
+	# Step 3: Generate maze using recursive backtracker (only on selected positions)
+	var visited_cells = {}
+	var stack = []
+	var start_cell = Vector2i(0, 0)
+
+	visited_cells[start_cell] = true
+	stack.push_back(start_cell)
+
+	# Track furthest room for exit designation
+	var furthest_room_pos = start_cell
+	var max_distance = 0
+
+	while stack.size() > 0:
+		var current_cell = stack.back()
+
+		# Get unvisited neighbors (only from selected positions)
+		var unvisited_neighbors = []
+		var directions = [
+			{"vec": Vector2i(0, -1), "dir": "north", "opposite": "south"},  # North
+			{"vec": Vector2i(0, 1), "dir": "south", "opposite": "north"},   # South
+			{"vec": Vector2i(1, 0), "dir": "east", "opposite": "west"},     # East
+			{"vec": Vector2i(-1, 0), "dir": "west", "opposite": "east"}     # West
+		]
+
+		for dir_data in directions:
+			var neighbor = current_cell + dir_data.vec
+			# Check if neighbor is in selected positions AND not visited
+			if selected_positions.has(neighbor) and not visited_cells.has(neighbor):
+				unvisited_neighbors.append({"cell": neighbor, "data": dir_data})
+
+		if unvisited_neighbors.size() > 0:
+			# Choose random unvisited neighbor
+			var chosen = unvisited_neighbors[randi() % unvisited_neighbors.size()]
+			var neighbor_cell = chosen.cell
+			var dir_data = chosen.data
+
+			# Create connection between current and neighbor
+			var current_room_id = "room_%d_%d" % [current_cell.y, current_cell.x]
+			var neighbor_room_id = "room_%d_%d" % [neighbor_cell.y, neighbor_cell.x]
+
+			rooms_dict[current_room_id].connections[dir_data.dir] = neighbor_room_id
+			rooms_dict[neighbor_room_id].connections[dir_data.opposite] = current_room_id
+
+			# Mark neighbor as visited and add to stack
+			visited_cells[neighbor_cell] = true
+			stack.push_back(neighbor_cell)
+
+			# Track furthest room (Manhattan distance from start)
+			var distance = abs(neighbor_cell.x - start_cell.x) + abs(neighbor_cell.y - start_cell.y)
+			if distance > max_distance:
+				max_distance = distance
+				furthest_room_pos = neighbor_cell
+		else:
+			# Backtrack
+			stack.pop_back()
+
+	# Step 4: Assign encounters (first room always safe, furthest room is exit, others may have encounters)
+	var exit_room_id = "room_%d_%d" % [furthest_room_pos.y, furthest_room_pos.x]
+
+	for room_id in rooms_dict.keys():
+		var room = rooms_dict[room_id]
+
+		if room_id == "room_0_0":  # Starting room
+			room.encounter_id = ""
+		elif room_id == exit_room_id:  # Exit room
+			room.encounter_id = ""  # Exit room is safe
 		else:
 			# 75% chance of encounter in other rooms
 			if randf() < 0.75:
@@ -34,20 +143,22 @@ func generate_linear_dungeon(room_count: int = 4):
 			else:
 				room.encounter_id = ""
 
-		rooms_dict["room_%d" % i] = room
-
 	# Initialize dungeon state via mutations
 	DungeonStateMutations.set_rooms(rooms_dict)
-	DungeonStateMutations.set_current_room("room_0")
-	DungeonStateMutations.mark_room_visited("room_0")
+	DungeonStateMutations.set_current_room("room_0_0")
+	DungeonStateMutations.mark_room_visited("room_0_0")
 
-	print("DungeonEngine: Generated linear dungeon with %d rooms" % room_count)
+	print("DungeonEngine: Generated %dx%d sparse maze (%d rooms, %.0f%% filled)" % [rows, cols, rooms_dict.size(), fill_percentage * 100])
+	print("DungeonEngine: Exit room at %s" % exit_room_id)
 	_print_dungeon_layout()
+
+	# Store exit room for completion check
+	_exit_room_id = exit_room_id
 
 # Start a new dungeon
 func start_dungeon():
-	generate_linear_dungeon(4)
-	print("DungeonEngine: Dungeon started at room_0")
+	generate_grid_dungeon(5, 5, 0.55)  # 5x5 grid, 55% filled (organic layout)
+	print("DungeonEngine: Dungeon started at room_0_0")
 
 # Move player in a direction
 func move_player(direction: String) -> bool:
@@ -96,16 +207,8 @@ func is_dungeon_complete() -> bool:
 	if not current_room:
 		return false
 
-	# Check if this room has no forward connections (end of linear dungeon)
-	var has_forward = false
-	for direction in ["north", "south", "east", "west"]:
-		var connection = current_room.connections.get(direction)
-		if connection != null and connection != "":
-			# Check if this is a "forward" connection (not back to start)
-			has_forward = true
-
-	# For linear dungeon, check if we're at the last room
-	if current_room.room_id == "room_3":  # Hardcoded for 4-room dungeon
+	# Check if we're at the designated exit room (furthest from start)
+	if current_room.room_id == _exit_room_id:
 		return true
 
 	return false

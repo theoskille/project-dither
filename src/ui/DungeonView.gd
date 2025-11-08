@@ -39,19 +39,34 @@ func _build_ui():
 	map_container.size_flags_stretch_ratio = 2.0
 	main_vbox.add_child(map_container)
 
-	# Horizontal layout for rooms (linear dungeon)
-	var rooms_hbox = HBoxContainer.new()
-	rooms_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	rooms_hbox.add_theme_constant_override("separation", 20)
-	map_container.add_child(rooms_hbox)
+	# Grid layout for rooms (5x5 sparse grid dungeon)
+	var rooms_grid = GridContainer.new()
+	rooms_grid.columns = 5
+	rooms_grid.add_theme_constant_override("h_separation", 10)
+	rooms_grid.add_theme_constant_override("v_separation", 10)
+	map_container.add_child(rooms_grid)
 
-	# Create room displays (4 rooms for linear dungeon)
-	for i in range(4):
-		var room_display = PanelContainer.new()
-		room_display.set_script(preload("res://src/ui/RoomDisplay.gd"))
-		room_display.room_id = "room_%d" % i
-		rooms_hbox.add_child(room_display)
-		room_displays["room_%d" % i] = room_display
+	# Create room displays (5x5 grid with spacers for empty positions)
+	for row in range(5):
+		for col in range(5):
+			var room_id = "room_%d_%d" % [row, col]
+
+			# Check if this position has a room in the dungeon
+			var room_exists = DungeonStateStore.get_room(room_id) != null
+
+			if room_exists:
+				# Create actual room display
+				var room_display = PanelContainer.new()
+				room_display.set_script(preload("res://src/ui/RoomDisplay.gd"))
+				room_display.room_id = room_id
+				rooms_grid.add_child(room_display)
+				room_displays[room_id] = room_display
+			else:
+				# Create invisible spacer for empty grid position
+				var spacer = Control.new()
+				spacer.custom_minimum_size = Vector2(80, 80)
+				spacer.modulate = Color(0, 0, 0, 0)  # Fully transparent
+				rooms_grid.add_child(spacer)
 
 	# === MOVEMENT CONTROLS (Bottom) ===
 	var controls_container = PanelContainer.new()
