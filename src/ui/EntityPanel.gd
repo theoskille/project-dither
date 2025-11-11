@@ -230,7 +230,27 @@ func _update_display():
 		title_label.text = "NO ENTITY"
 		hp_label.text = "HP: -/-"
 		vigor_label.text = "Vigor: -/-"
+		modulate = Color(1, 1, 1)  # Reset to normal
 		return
+
+	# Check if entity is dead
+	if entity.is_dead:
+		# Grey out the panel
+		modulate = Color(0.5, 0.5, 0.5)
+
+		# Show DEAD label
+		title_label.text = "DEAD"
+		hp_label.text = "HP: 0/%d" % entity.max_hp
+		vigor_label.text = "Vigor: -/-"
+
+		# Hide action buttons
+		_set_action_buttons_visible(false)
+		done_turn_button.visible = false
+
+		return
+
+	# Entity is alive - normal display
+	modulate = Color(1, 1, 1)  # Reset to normal color
 
 	# Update title
 	if entity.name != null and not entity.name.is_empty():

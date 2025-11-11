@@ -46,6 +46,10 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			# Check for death and trigger on_kill passives
 			if new_hp == 0:
 				_trigger_passives(caster_id, "on_kill", target_id)
+
+				# Mark entity as dead
+				BattleStateMutations.set_entity_dead(target_id, true)
+
 				_check_victory()
 
 	# Get battlefield size for boundary clamping
@@ -92,6 +96,10 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 				# Check for death from collision damage
 				if new_hp == 0:
 					_trigger_passives(caster_id, "on_kill", collision_entity_id)
+
+					# Mark entity as dead
+					BattleStateMutations.set_entity_dead(collision_entity_id, true)
+
 					_check_victory()
 
 	# Move target if specified (relative to caster position)
@@ -193,10 +201,11 @@ func _generate_turn_order() -> Array[String]:
 	var player = BattleStateStore.battle_state.player_state
 	combatants.append({"id": "player", "spd": player.base_stats.get("spd", 0)})
 
-	# Add all enemies
+	# Add all living enemies
 	var enemies = BattleStateStore.battle_state.enemies
 	for i in range(enemies.size()):
-		combatants.append({"id": "enemy_%d" % i, "spd": enemies[i].base_stats.get("spd", 0)})
+		if not enemies[i].is_dead:
+			combatants.append({"id": "enemy_%d" % i, "spd": enemies[i].base_stats.get("spd", 0)})
 
 	# Sort by speed (highest first)
 	combatants.sort_custom(func(a, b): return a.spd > b.spd)
@@ -253,7 +262,7 @@ func _find_collision_entity(caster_id: String, start_position: int, movement: in
 				continue  # Skip the caster
 
 			var entity = _get_entity_by_id(entity_id)
-			if entity and entity.position == check_position:
+			if entity and not entity.is_dead and entity.position == check_position:
 				# Found an entity closer than previous finds
 				if i < nearest_distance:
 					nearest_entity = entity_id
@@ -448,8 +457,9 @@ func _check_victory():
 	var enemies = BattleStateStore.battle_state.enemies
 	var all_dead = true
 
+	# Victory occurs when all enemies are marked as dead
 	for enemy in enemies:
-		if enemy.current_hp > 0:
+		if not enemy.is_dead:
 			all_dead = false
 			break
 

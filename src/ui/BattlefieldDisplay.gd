@@ -98,10 +98,15 @@ func _update_display():
 	if player_pos >= 0 and player_pos < position_labels.size():
 		position_labels[player_pos].text = "P"
 
-	# Show all enemies as sprites
+	# Show all living enemies as sprites
 	var enemies = BattleStateStore.battle_state.enemies
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
+
+		# Skip dead enemies
+		if enemy.is_dead:
+			continue
+
 		var enemy_pos = enemy.position
 		if enemy_pos >= 0 and enemy_pos < position_sprite_containers.size():
 			# Create sprite for this enemy

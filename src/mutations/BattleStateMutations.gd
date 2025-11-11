@@ -144,6 +144,18 @@ func add_enemy_to_battle(enemy_data: EnemyData, position: int):
 	# Emit signal for new enemy added
 	BattleStateStore._emit_change("enemies.%d" % enemy_index, null, entity_state)
 
+# Mark an entity as dead
+func set_entity_dead(entity_id: String, dead: bool):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "is_dead")
+	var old_dead = entity.is_dead
+	entity.is_dead = dead
+	BattleStateStore._emit_change(property_path, old_dead, dead)
+	print("BattleStateMutations: Set %s is_dead = %s" % [entity_id, dead])
+
 # Clear all enemies from battle
 func clear_enemies():
 	var old_enemies = BattleStateStore.battle_state.enemies
