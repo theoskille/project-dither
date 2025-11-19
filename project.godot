@@ -30,6 +30,7 @@ DungeonStateMutations="*res://src/mutations/DungeonStateMutations.gd"
 DungeonEngine="*res://src/engine/DungeonEngine.gd"
 PlayerStore="*res://src/store/PlayerStore.gd"
 PlayerMutations="*res://src/mutations/PlayerMutations.gd"
+SkillTreeEngine="*res://src/engine/SkillTreeEngine.gd"
 
 [display]
 

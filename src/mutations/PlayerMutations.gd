@@ -26,13 +26,80 @@ func level_up():
 
 	PlayerStore._emit_change("base_stats", old_stats, PlayerStore.base_stats)
 
+	# Award a skill point
+	var old_points = PlayerStore.skill_points
+	var new_points = old_points + 1
+	PlayerStore.skill_points = new_points
+	PlayerStore._emit_change("skill_points", old_points, new_points)
+
 	# Reset XP to 0 for next level
 	var old_xp = PlayerStore.current_xp
 	PlayerStore.current_xp = 0
 	PlayerStore._emit_change("current_xp", old_xp, 0)
 
 	PlayerStore.level_up.emit(new_level)
-	print("PlayerMutations: Level up! Now level %d. Stats increased: %s -> %s" % [new_level, old_stats, PlayerStore.base_stats])
+	print("PlayerMutations: Level up! Now level %d. Stats increased: %s -> %s. Skill points: %d" % [new_level, old_stats, PlayerStore.base_stats, new_points])
+
+func award_skill_point():
+	"""Award one skill point to the player"""
+	var old_points = PlayerStore.skill_points
+	var new_points = old_points + 1
+	PlayerStore.skill_points = new_points
+	PlayerStore._emit_change("skill_points", old_points, new_points)
+	print("PlayerMutations: Awarded skill point (total: %d)" % new_points)
+
+func unlock_skill(skill_id: String):
+	"""Add a skill to the player's unlocked skills list"""
+	if skill_id in PlayerStore.unlocked_skills:
+		push_warning("PlayerMutations: Skill '%s' already unlocked" % skill_id)
+		return
+
+	var old_unlocked = PlayerStore.unlocked_skills.duplicate()
+	PlayerStore.unlocked_skills.append(skill_id)
+	PlayerStore._emit_change("unlocked_skills", old_unlocked, PlayerStore.unlocked_skills)
+	PlayerStore.skill_unlocked.emit(skill_id)
+	print("PlayerMutations: Unlocked skill '%s'" % skill_id)
+
+func spend_skill_point():
+	"""Spend one skill point"""
+	var old_points = PlayerStore.skill_points
+	var new_points = max(0, old_points - 1)
+	PlayerStore.skill_points = new_points
+	PlayerStore._emit_change("skill_points", old_points, new_points)
+	print("PlayerMutations: Spent skill point (remaining: %d)" % new_points)
+
+func add_stat_bonus(stat_name: String, amount: int):
+	"""Add a permanent bonus to a base stat"""
+	if not stat_name in PlayerStore.base_stats:
+		push_error("PlayerMutations: Invalid stat name '%s'" % stat_name)
+		return
+
+	var old_stats = PlayerStore.base_stats.duplicate()
+	PlayerStore.base_stats[stat_name] += amount
+	PlayerStore._emit_change("base_stats", old_stats, PlayerStore.base_stats)
+	print("PlayerMutations: Added +%d to %s (new value: %d)" % [amount, stat_name, PlayerStore.base_stats[stat_name]])
+
+func add_attack(attack_id: String):
+	"""Add an attack to the player's equipped attacks"""
+	if attack_id in PlayerStore.equipped_attacks:
+		push_warning("PlayerMutations: Attack '%s' already equipped" % attack_id)
+		return
+
+	var old_attacks = PlayerStore.equipped_attacks.duplicate()
+	PlayerStore.equipped_attacks.append(attack_id)
+	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
+	print("PlayerMutations: Added attack '%s'" % attack_id)
+
+func add_passive_ability(passive_id: String):
+	"""Add a passive ability to the player"""
+	if passive_id in PlayerStore.passive_abilities:
+		push_warning("PlayerMutations: Passive '%s' already active" % passive_id)
+		return
+
+	var old_passives = PlayerStore.passive_abilities.duplicate()
+	PlayerStore.passive_abilities.append(passive_id)
+	PlayerStore._emit_change("passive_abilities", old_passives, PlayerStore.passive_abilities)
+	print("PlayerMutations: Added passive ability '%s'" % passive_id)
 
 func reset_progression():
 	# Reset level to 1
