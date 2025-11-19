@@ -12,6 +12,7 @@ var current_view: Control = null
 
 var dungeon_view: Control
 var combat_view: Control
+var victory_screen: Control
 
 func _ready():
 	# Set anchors to fill the screen
@@ -20,7 +21,7 @@ func _ready():
 
 	# Connect to engine signals
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
-	CombatEngine.battle_ended.connect(_on_battle_ended)
+	CombatEngine.victory_achieved.connect(_on_victory_achieved)
 
 	# Start in dungeon mode
 	DungeonEngine.start_dungeon()
@@ -127,8 +128,32 @@ func _on_encounter_triggered(encounter_id: String):
 	print("Main: Encounter triggered: %s" % encounter_id)
 	_switch_to_combat_view(encounter_id)
 
-func _on_battle_ended():
-	print("Main: Battle ended, returning to dungeon")
+func _on_victory_achieved(total_xp: int, levels_gained: int):
+	print("Main: Victory achieved - showing victory screen")
+
+	# Create victory screen overlay
+	victory_screen = Control.new()
+	victory_screen.set_script(preload("res://src/ui/VictoryScreen.gd"))
+	victory_screen.anchor_right = 1.0
+	victory_screen.anchor_bottom = 1.0
+
+	# Initialize with XP data BEFORE adding to tree
+	victory_screen.initialize(total_xp, levels_gained)
+
+	# Add to tree (this triggers _ready())
+	add_child(victory_screen)
+
+	# Connect to victory screen's continue button
+	victory_screen.continue_pressed.connect(_on_victory_continue_pressed)
+
+func _on_victory_continue_pressed():
+	print("Main: Victory continue pressed, returning to dungeon")
+
+	# Remove victory screen
+	if victory_screen:
+		remove_child(victory_screen)
+		victory_screen.queue_free()
+		victory_screen = null
 
 	# Clear the encounter from the current room
 	var current_room_id = DungeonStateStore.current_room_id

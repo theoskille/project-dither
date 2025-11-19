@@ -125,6 +125,7 @@ func set_turn_order(new_order: Array[String]):
 func add_enemy_to_battle(enemy_data: EnemyData, position: int):
 	var entity_state = EntityState.new()
 	entity_state.name = enemy_data.enemy_name
+	entity_state.enemy_id = enemy_data.enemy_id
 	entity_state.max_hp = enemy_data.max_hp
 	entity_state.current_hp = enemy_data.max_hp
 	entity_state.max_vigor = enemy_data.max_vigor

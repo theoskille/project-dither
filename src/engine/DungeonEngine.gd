@@ -157,6 +157,9 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 
 # Start a new dungeon
 func start_dungeon():
+	# Reset player progression (level and XP) for new dungeon run
+	PlayerMutations.reset_progression()
+
 	generate_grid_dungeon(5, 5, 0.55)  # 5x5 grid, 55% filled (organic layout)
 	print("DungeonEngine: Dungeon started at room_0_0")
 

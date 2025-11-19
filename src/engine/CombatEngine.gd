@@ -2,6 +2,7 @@ extends Node
 
 ## Signals
 signal battle_ended()  # Emitted when all enemies are defeated
+signal victory_achieved(total_xp: int, levels_gained: int)  # Emitted after XP awarded and level ups processed
 
 # Reset battle state to clean slate (call before starting new encounter)
 func reset_battle():
@@ -191,7 +192,22 @@ func start_turn(entity_id: String):
 
 func end_turn():
 	process_turn_end()
+
+	# Skip dead entities in turn order
 	var next_entity = _get_current_turn_entity()
+	var max_iterations = 20  # Safety limit to prevent infinite loops
+	var iterations = 0
+
+	while _is_entity_dead(next_entity) and iterations < max_iterations:
+		print("CombatEngine: Skipping turn for dead entity: %s" % next_entity)
+		process_turn_end()  # Advance turn index
+		next_entity = _get_current_turn_entity()
+		iterations += 1
+
+	if iterations >= max_iterations:
+		push_error("CombatEngine: Exceeded max iterations while skipping dead entities")
+		return
+
 	start_turn(next_entity)
 
 func _generate_turn_order() -> Array[String]:
@@ -465,7 +481,51 @@ func _check_victory():
 
 	if all_dead and enemies.size() > 0:
 		print("CombatEngine: All enemies defeated! Victory!")
+
+		# Calculate total XP from all defeated enemies
+		var total_xp = _calculate_total_xp_reward()
+
+		# Award XP to player
+		PlayerMutations.add_xp(total_xp)
+
+		# Check for level ups (loop to handle multiple level ups)
+		var levels_gained = 0
+		while PlayerStore.current_xp >= _calculate_xp_for_level(PlayerStore.level + 1):
+			PlayerMutations.level_up()
+			levels_gained += 1
+
+		# Emit signals
 		battle_ended.emit()
+		victory_achieved.emit(total_xp, levels_gained)
+
 		return true
 
 	return false
+
+func _calculate_total_xp_reward() -> int:
+	"""Calculate total XP from all defeated enemies in current battle"""
+	var total_xp = 0
+	var enemies = BattleStateStore.battle_state.enemies
+
+	for i in range(enemies.size()):
+		var enemy_state = enemies[i]
+		var enemy_data = EnemyDatabase.get_enemy(enemy_state.enemy_id)
+		if enemy_data:
+			total_xp += enemy_data.xp_reward
+			print("CombatEngine: Enemy %d (%s) rewards %d XP" % [i, enemy_data.enemy_name, enemy_data.xp_reward])
+		else:
+			push_warning("CombatEngine: Could not find enemy data for enemy_id '%s'" % enemy_state.enemy_id)
+
+	print("CombatEngine: Total XP reward: %d" % total_xp)
+	return total_xp
+
+func _calculate_xp_for_level(level: int) -> int:
+	"""Calculate XP required to reach the given level (linear curve: 100 * level)"""
+	return 100 * level
+
+func _is_entity_dead(entity_id: String) -> bool:
+	"""Check if an entity is dead"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return true  # Treat missing entities as dead
+	return entity.is_dead

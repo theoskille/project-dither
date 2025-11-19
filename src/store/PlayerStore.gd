@@ -6,8 +6,13 @@ extends Node
 ## Emits signals when player data changes
 
 signal state_changed(property_path: String, old_value, new_value)
+signal xp_gained(amount: int, new_total: int)
+signal level_up(new_level: int)
 
 # Player persistent data
+var level: int = 1
+var current_xp: int = 0
+
 var base_stats: Dictionary = {
 	"str": 10,
 	"dex": 8,
