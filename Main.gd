@@ -1,11 +1,13 @@
 extends Control
 
-## Main scene manager
-## Handles transitions between dungeon exploration and combat
+## Main scene manager with view stack
+## Handles transitions between dungeon exploration, combat, and inventory
+## Supports push/pop navigation for hierarchical views
 
 enum GameMode { DUNGEON, COMBAT }
 
 var current_mode: GameMode = GameMode.DUNGEON
+var view_stack: Array[Control] = []  # Stack of active views
 var current_view: Control = null
 
 var dungeon_view: Control
@@ -24,29 +26,75 @@ func _ready():
 	DungeonEngine.start_dungeon()
 	_switch_to_dungeon_view()
 
+func push_view(view_script: GDScript):
+	"""Push a new view onto the stack and display it"""
+	print("Main: Pushing view onto stack")
+
+	# Hide current view if it exists
+	if current_view:
+		current_view.visible = false
+
+	# Create new view
+	var new_view = Control.new()
+	new_view.set_script(view_script)
+	add_child(new_view)
+
+	# Connect to view signals if they exist
+	if new_view.has_signal("back_button_pressed"):
+		new_view.back_button_pressed.connect(_on_inventory_closed)
+
+	# Add to stack
+	view_stack.append(new_view)
+	current_view = new_view
+
+func pop_view():
+	"""Remove the current view and return to the previous one"""
+	print("Main: Popping view from stack")
+
+	if view_stack.size() <= 1:
+		push_warning("Main: Cannot pop last view from stack")
+		return
+
+	# Remove and free current view
+	var old_view = view_stack.pop_back()
+	remove_child(old_view)
+	old_view.queue_free()
+
+	# Show previous view
+	current_view = view_stack[-1]
+	current_view.visible = true
+
 func _switch_to_dungeon_view():
 	print("Main: Switching to dungeon view")
 
-	# Remove current view if it exists
-	if current_view:
-		remove_child(current_view)
-		current_view.queue_free()
+	# Clear view stack
+	for view in view_stack:
+		remove_child(view)
+		view.queue_free()
+	view_stack.clear()
 
 	# Create dungeon view
 	dungeon_view = Control.new()
 	dungeon_view.set_script(preload("res://src/ui/DungeonView.gd"))
+	dungeon_view.anchor_right = 1.0
+	dungeon_view.anchor_bottom = 1.0
 	add_child(dungeon_view)
 
+	# Connect to dungeon view signals
+	dungeon_view.inventory_button_pressed.connect(_on_inventory_opened)
+
+	view_stack.append(dungeon_view)
 	current_view = dungeon_view
 	current_mode = GameMode.DUNGEON
 
 func _switch_to_combat_view(encounter_id: String):
 	print("Main: Switching to combat view for encounter: %s" % encounter_id)
 
-	# Remove current view if it exists
-	if current_view:
-		remove_child(current_view)
-		current_view.queue_free()
+	# Clear view stack
+	for view in view_stack:
+		remove_child(view)
+		view.queue_free()
+	view_stack.clear()
 
 	# Get encounter data
 	var encounter = EncounterDatabase.get_encounter(encounter_id)
@@ -67,8 +115,11 @@ func _switch_to_combat_view(encounter_id: String):
 	combat_view.initialize_combat(encounter.enemy_configs)
 
 	# Now add to tree - this triggers _ready() and UI building
+	combat_view.anchor_right = 1.0
+	combat_view.anchor_bottom = 1.0
 	add_child(combat_view)
 
+	view_stack.append(combat_view)
 	current_view = combat_view
 	current_mode = GameMode.COMBAT
 
@@ -85,3 +136,11 @@ func _on_battle_ended():
 
 	# Switch back to dungeon view
 	_switch_to_dungeon_view()
+
+func _on_inventory_opened():
+	print("Main: Opening inventory view")
+	push_view(preload("res://src/ui/InventoryView.gd"))
+
+func _on_inventory_closed():
+	print("Main: Closing inventory view")
+	pop_view()

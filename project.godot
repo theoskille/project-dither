@@ -15,10 +15,6 @@ run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.4", "Mobile")
 config/icon="res://icon.svg"
 
-[display]
-
-window/size/mode=3
-
 [autoload]
 
 AttackDatabase="*res://src/data/AttackDatabase.gd"
@@ -32,6 +28,11 @@ CombatEngine="*res://src/engine/CombatEngine.gd"
 DungeonStateStore="*res://src/store/DungeonStateStore.gd"
 DungeonStateMutations="*res://src/mutations/DungeonStateMutations.gd"
 DungeonEngine="*res://src/engine/DungeonEngine.gd"
+PlayerStore="*res://src/store/PlayerStore.gd"
+
+[display]
+
+window/size/mode=3
 
 [rendering]
 

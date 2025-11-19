@@ -3,6 +3,8 @@ extends Control
 ## Main dungeon exploration UI
 ## Shows dungeon map and movement controls
 
+signal inventory_button_pressed()
+
 var room_displays: Dictionary = {}  # room_id -> RoomDisplay instance
 var movement_buttons: Dictionary = {}  # direction -> Button instance
 
@@ -82,17 +84,17 @@ func _build_ui():
 	controls_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls_vbox.add_child(controls_label)
 
-	# Movement button grid (3x3 with center empty)
+	# Movement button grid (3x3 with center as inventory button)
 	var button_grid = GridContainer.new()
 	button_grid.columns = 3
 	button_grid.add_theme_constant_override("h_separation", 10)
 	button_grid.add_theme_constant_override("v_separation", 10)
 	controls_vbox.add_child(button_grid)
 
-	# Create directional buttons
+	# Create directional buttons with inventory button in center
 	var directions = [
 		["", "north", ""],
-		["west", "", "east"],
+		["west", "inventory", "east"],
 		["", "south", ""]
 	]
 
@@ -103,6 +105,13 @@ func _build_ui():
 				var spacer = Control.new()
 				spacer.custom_minimum_size = Vector2(80, 40)
 				button_grid.add_child(spacer)
+			elif dir == "inventory":
+				# Inventory button in center
+				var inv_btn = Button.new()
+				inv_btn.text = "Inventory"
+				inv_btn.custom_minimum_size = Vector2(80, 40)
+				inv_btn.pressed.connect(_on_inventory_button_pressed)
+				button_grid.add_child(inv_btn)
 			else:
 				var btn = Button.new()
 				btn.text = dir.capitalize()
@@ -132,3 +141,7 @@ func _update_movement_buttons():
 func _on_movement_button_pressed(direction: String):
 	print("DungeonView: Player clicked %s button" % direction)
 	DungeonEngine.move_player(direction)
+
+func _on_inventory_button_pressed():
+	print("DungeonView: Inventory button pressed")
+	inventory_button_pressed.emit()
