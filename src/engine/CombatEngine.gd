@@ -45,6 +45,11 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			var new_hp = max(0, target_entity.current_hp - damage)
 			BattleStateMutations.set_entity_hp(target_id, new_hp)
 
+			# Apply life steal from passives
+			var heal_amount = _calculate_life_steal(caster_id, damage)
+			if heal_amount > 0:
+				BattleStateMutations.heal_entity(caster_id, heal_amount)
+
 			# Check for death and trigger on_kill passives
 			if new_hp == 0:
 				_trigger_passives(caster_id, "on_kill", target_id)
@@ -94,6 +99,11 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 				var new_hp = max(0, collision_target.current_hp - collision_damage)
 				BattleStateMutations.set_entity_hp(collision_entity_id, new_hp)
 				print("CombatEngine: Collision damage applied to %s: %d damage" % [collision_entity_id, collision_damage])
+
+				# Apply life steal from collision damage
+				var heal_amount = _calculate_life_steal(caster_id, collision_damage)
+				if heal_amount > 0:
+					BattleStateMutations.heal_entity(caster_id, heal_amount)
 
 				# Check for death from collision damage
 				if new_hp == 0:
@@ -335,6 +345,25 @@ func _calculate_damage_from_action(action_data: ActionData, caster_id: String) -
 	total_damage += effect_modifiers
 
 	return max(0, total_damage)
+
+func _calculate_life_steal(entity_id: String, damage_dealt: int) -> int:
+	"""
+	Calculate total healing from life steal passives.
+	Checks all passive abilities on the entity for life_steal_percent.
+	"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return 0
+
+	var total_heal = 0
+	for passive_id in entity.passive_abilities:
+		var passive = PassiveAbilityDatabase.get_passive(passive_id)
+		if passive and passive.life_steal_percent > 0:
+			var heal_amount = int(damage_dealt * passive.life_steal_percent / 100.0)
+			total_heal += heal_amount
+			print("CombatEngine: Life steal from '%s': %d HP (%.1f%% of %d damage)" % [passive.passive_name, heal_amount, passive.life_steal_percent, damage_dealt])
+
+	return total_heal
 
 func _calculate_damage(move_data: Dictionary, caster: String) -> int:
 	var base_damage = move_data.get("base_damage", 0)

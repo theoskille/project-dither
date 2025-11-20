@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillNodeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/SkillNodeData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+node_id = "bloodthirst"
+node_name = "Bloodthirst"
+description = "When you kill an enemy, gain 1 vigor. Feed on the carnage of battle."
+icon_path = ""
+grid_x = 1
+grid_y = 1
+skill_point_cost = 2
+level_requirement = 5
+prerequisite_node_ids = Array[String](["dash_strike", "knockback_strike"])
+skill_type = "passive"
+grants_attack_id = ""
+grants_passive_id = "bloodthirst"
+stat_bonus_type = ""
+stat_bonus_amount = 0
+upgrades_attack_id = ""
+damage_bonus = 0
+vigor_cost_reduction = 0
+cooldown_reduction = 0

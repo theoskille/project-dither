@@ -93,6 +93,14 @@ func restore_vigor(entity_id: String, amount: int):
 	var new_vigor = min(entity.max_vigor, entity.current_vigor + amount)
 	set_entity_vigor(entity_id, new_vigor)
 
+func heal_entity(entity_id: String, amount: int):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var new_hp = min(entity.max_hp, entity.current_hp + amount)
+	set_entity_hp(entity_id, new_hp)
+
 func set_entity_position(entity_id: String, new_position: int):
 	var entity = _get_entity_by_id(entity_id)
 	if not entity:

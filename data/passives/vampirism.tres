@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PassiveAbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/PassiveAbilityData.gd" id="1_vampirism"]
+
+[resource]
+script = ExtResource("1_vampirism")
+passive_id = "vampirism"
+passive_name = "Vampirism"
+description = "Heal for 20% of all damage you deal. Your attacks drain the life force from your enemies."
+trigger_type = ""
+vigor_restore = 0
+heal_amount = 0
+applies_effect_id = ""
+life_steal_percent = 20.0
