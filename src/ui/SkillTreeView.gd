@@ -275,7 +275,7 @@ func _update_detail_panel():
 	# Skill name
 	var name_label = Label.new()
 	name_label.text = node.node_name
-	name_label.add_theme_font_size_override("font_size", 18)
+	name_label.add_theme_font_size_override("font_size", 28)
 	name_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.8))
 	detail_info_vbox.add_child(name_label)
 

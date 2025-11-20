@@ -15,6 +15,7 @@ signal character_class_changed(new_class_id: String)
 var selected_character_class: String = ""
 var level: int = 1
 var current_xp: int = 0
+var current_hp: int = 0  # Persistent health that carries between encounters
 
 # Skill tree data
 var skill_points: int = 0

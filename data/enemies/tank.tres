@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_tank"]
+
+[resource]
+script = ExtResource("1_tank")
+enemy_id = "tank"
+enemy_name = "Tank"
+max_hp = 120
+max_vigor = 3
+base_stats = {
+"con": 16,
+"dex": 6,
+"int": 5,
+"luck": 7,
+"spd": 6,
+"str": 14
+}
+equipped_attacks = Array[String](["slash"])
+passive_abilities = Array[String](["sentinel"])
+xp_reward = 70

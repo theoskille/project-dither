@@ -193,6 +193,12 @@ func can_execute_action(action_data: ActionData, caster_id: String, target_id: S
 	if distance < action_data.min_range or distance > action_data.max_range:
 		return false
 
+	# Check if movement is blocked by sentinel
+	if action_data.move_caster != 0:
+		if _is_movement_blocked_by_sentinel(caster_id, caster_entity.position, action_data.move_caster):
+			print("CombatEngine: %s cannot move - blocked by sentinel" % caster_id)
+			return false
+
 	return true
 
 func start_battle():
@@ -305,6 +311,58 @@ func _find_collision_entity(caster_id: String, start_position: int, movement: in
 					return nearest_entity  # Return immediately (stop at first collision)
 
 	return nearest_entity
+
+func _is_movement_blocked_by_sentinel(mover_id: String, start_position: int, movement: int) -> bool:
+	"""
+	Checks if movement would pass an enemy with the "sentinel" passive ability.
+	Only blocks forward movement past the sentinel - backward movement is allowed.
+	Returns true if blocked, false if movement is allowed.
+	"""
+	if movement == 0:
+		return false
+
+	var direction = sign(movement)
+	var distance = abs(movement)
+	var end_position = start_position + movement
+
+	# Determine if this is forward movement (toward back positions)
+	# Assuming higher positions = back of battlefield
+	var is_forward = direction > 0
+
+	# Only check for sentinel if moving forward
+	if not is_forward:
+		return false
+
+	# Get all entities to check for sentinel
+	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
+
+	# Check each position in the movement path (excluding start position)
+	for i in range(1, distance + 1):
+		var check_position = start_position + (direction * i)
+
+		# Check if any entity at this position has sentinel passive
+		for entity_id in turn_order:
+			if entity_id == mover_id:
+				continue  # Skip the moving entity
+
+			var entity = _get_entity_by_id(entity_id)
+			if not entity or entity.is_dead:
+				continue
+
+			# Check if entity is at the position we're trying to pass
+			if entity.position == check_position:
+				# Check if this entity has sentinel passive
+				if "sentinel" in entity.passive_abilities:
+					print("CombatEngine: Movement blocked by sentinel at position %d (entity: %s)" % [check_position, entity_id])
+					return true
+
+			# Also block if trying to move past a sentinel (sentinel is between start and end)
+			if entity.position > start_position and entity.position <= end_position:
+				if "sentinel" in entity.passive_abilities:
+					print("CombatEngine: Movement blocked - would pass sentinel at position %d (entity: %s)" % [entity.position, entity_id])
+					return true
+
+	return false
 
 func _get_entity_by_id(entity_id: String) -> EntityState:
 	if entity_id == "player":
@@ -519,6 +577,9 @@ func _check_victory():
 
 	if all_dead and enemies.size() > 0:
 		print("CombatEngine: All enemies defeated! Victory!")
+
+		# Save player health to persistent store
+		BattleStateMutations.save_player_hp_to_store()
 
 		# Calculate total XP from all defeated enemies
 		var total_xp = _calculate_total_xp_reward()

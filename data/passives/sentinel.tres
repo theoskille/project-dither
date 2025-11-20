@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveAbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/PassiveAbilityData.gd" id="1_sentinel"]
+
+[resource]
+script = ExtResource("1_sentinel")
+passive_id = "sentinel"
+passive_name = "Sentinel"
+description = "Enemies cannot move past this character. Blocks all forward movement abilities."
+trigger_type = ""
+vigor_restore = 0
+heal_amount = 0
+applies_effect_id = ""

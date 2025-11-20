@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_archer"]
+
+[resource]
+script = ExtResource("1_archer")
+enemy_id = "archer"
+enemy_name = "Archer"
+max_hp = 60
+max_vigor = 3
+base_stats = {
+"con": 8,
+"dex": 14,
+"int": 7,
+"luck": 9,
+"spd": 12,
+"str": 8
+}
+equipped_attacks = Array[String](["snipe"])
+passive_abilities = Array[String]([])
+xp_reward = 50

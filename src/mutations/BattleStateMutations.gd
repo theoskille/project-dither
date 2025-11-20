@@ -236,12 +236,24 @@ func sync_player_from_store():
 	var old_max_hp = player.max_hp
 	var new_max_hp = 100 + (PlayerStore.base_stats.get("con", 10) * 5)
 	player.max_hp = new_max_hp
-	player.current_hp = new_max_hp  # Start at full HP
 	BattleStateStore._emit_change("player_state.max_hp", old_max_hp, new_max_hp)
-	BattleStateStore._emit_change("player_state.current_hp", null, new_max_hp)
+
+	# Restore persistent health from PlayerStore, or start at full if this is the first encounter
+	var old_current_hp = player.current_hp
+	var restored_hp = PlayerStore.current_hp if PlayerStore.current_hp > 0 else new_max_hp
+	player.current_hp = min(restored_hp, new_max_hp)  # Cap at max HP in case it changed
+	BattleStateStore._emit_change("player_state.current_hp", old_current_hp, player.current_hp)
 
 	# Max vigor stays at 3 for now (could be stat-based in future)
 	player.max_vigor = 3
 	player.current_vigor = 3
 
 	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Stats: %s, MaxHP: %d" % [player.equipped_attacks, player.base_stats, player.max_hp])
+
+func save_player_hp_to_store():
+	"""Save the current player HP from battle state back to persistent PlayerStore"""
+	var player = BattleStateStore.battle_state.player_state
+	var old_hp = PlayerStore.current_hp
+	PlayerStore.current_hp = player.current_hp
+	PlayerStore._emit_change("current_hp", old_hp, player.current_hp)
+	print("BattleStateMutations: Saved player HP to PlayerStore - HP: %d" % player.current_hp)

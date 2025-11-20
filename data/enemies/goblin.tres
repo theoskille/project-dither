@@ -17,4 +17,4 @@ base_stats = {
 "str": 9
 }
 equipped_attacks = Array[String](["slash"])
-xp_reward = 20
+xp_reward = 40
