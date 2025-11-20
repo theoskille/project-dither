@@ -108,10 +108,18 @@ func _update_display():
 
 	# Update label text
 	var room_number = room_id.replace("room_", "")
+	var is_boss_room = room.room_type == "boss" if room else false
+
 	if is_current:
-		label.text = "[P]\n%s" % room_number  # P for Player
+		if is_boss_room:
+			label.text = "[P] [X]\n%s" % room_number  # P for Player, X for Boss/Exit
+		else:
+			label.text = "[P]\n%s" % room_number  # P for Player
 	else:
-		label.text = "%s" % room_number
+		if is_boss_room:
+			label.text = "[X]\n%s" % room_number  # X for Boss/Exit
+		else:
+			label.text = "%s" % room_number
 
 	# Update connection indicators visibility
 	if room:

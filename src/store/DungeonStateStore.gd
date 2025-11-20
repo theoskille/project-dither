@@ -17,6 +17,7 @@ class Room:
 	}
 	var encounter_id: String = ""  # Empty string = no encounter
 	var visited: bool = false
+	var room_type: String = "normal"  # "normal" or "boss"
 
 	func _init(id: String):
 		room_id = id
@@ -24,6 +25,10 @@ class Room:
 # Dungeon state
 var rooms: Dictionary = {}  # Dictionary of Room instances, keyed by room_id
 var current_room_id: String = ""
+
+# Dungeon statistics
+var enemies_defeated: int = 0
+var rooms_cleared: int = 0
 
 func _ready():
 	pass  # Dungeon initialized by DungeonEngine

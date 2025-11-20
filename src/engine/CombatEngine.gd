@@ -57,6 +57,10 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 				# Mark entity as dead
 				BattleStateMutations.set_entity_dead(target_id, true)
 
+				# Track enemy defeats (only count enemies, not the player)
+				if target_id != "player":
+					DungeonStateMutations.increment_enemies_defeated()
+
 				_check_victory()
 
 	# Get battlefield size for boundary clamping
@@ -111,6 +115,10 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 
 					# Mark entity as dead
 					BattleStateMutations.set_entity_dead(collision_entity_id, true)
+
+					# Track enemy defeats (only count enemies, not the player)
+					if collision_entity_id != "player":
+						DungeonStateMutations.increment_enemies_defeated()
 
 					_check_victory()
 

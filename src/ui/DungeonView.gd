@@ -41,16 +41,22 @@ func _build_ui():
 	map_container.size_flags_stretch_ratio = 2.0
 	main_vbox.add_child(map_container)
 
-	# Grid layout for rooms (5x5 sparse grid dungeon)
+	# ScrollContainer for larger dungeons
+	var scroll_container = ScrollContainer.new()
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	map_container.add_child(scroll_container)
+
+	# Grid layout for rooms (10x10 sparse grid dungeon)
 	var rooms_grid = GridContainer.new()
-	rooms_grid.columns = 5
+	rooms_grid.columns = 10
 	rooms_grid.add_theme_constant_override("h_separation", 10)
 	rooms_grid.add_theme_constant_override("v_separation", 10)
-	map_container.add_child(rooms_grid)
+	scroll_container.add_child(rooms_grid)
 
-	# Create room displays (5x5 grid with spacers for empty positions)
-	for row in range(5):
-		for col in range(5):
+	# Create room displays (10x10 grid with spacers for empty positions)
+	for row in range(10):
+		for col in range(10):
 			var room_id = "room_%d_%d" % [row, col]
 
 			# Check if this position has a room in the dungeon

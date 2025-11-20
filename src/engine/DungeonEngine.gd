@@ -6,6 +6,7 @@ extends Node
 
 signal encounter_triggered(encounter_id: String)
 signal dungeon_completed()
+signal boss_defeated()
 
 var _exit_room_id: String = ""  # Tracks the designated exit room
 
@@ -125,7 +126,7 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 			# Backtrack
 			stack.pop_back()
 
-	# Step 4: Assign encounters (first room always safe, furthest room is exit, others may have encounters)
+	# Step 4: Assign encounters (first room always safe, furthest room is boss room)
 	var exit_room_id = "room_%d_%d" % [furthest_room_pos.y, furthest_room_pos.x]
 
 	for room_id in rooms_dict.keys():
@@ -133,10 +134,13 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 
 		if room_id == "room_0_0":  # Starting room
 			room.encounter_id = ""
-		elif room_id == exit_room_id:  # Exit room
-			room.encounter_id = ""  # Exit room is safe
+			room.room_type = "normal"
+		elif room_id == exit_room_id:  # Boss room (exit)
+			room.encounter_id = "boss_encounter"
+			room.room_type = "boss"
 		else:
 			# 75% chance of encounter in other rooms
+			room.room_type = "normal"
 			if randf() < 0.75:
 				var encounter_index = randi() % (available_encounters.size() - 1)  # Exclude empty string
 				room.encounter_id = available_encounters[encounter_index]
@@ -160,7 +164,7 @@ func start_dungeon():
 	# Reset player progression (level and XP) for new dungeon run
 	PlayerMutations.reset_progression()
 
-	generate_grid_dungeon(5, 5, 0.55)  # 5x5 grid, 55% filled (organic layout)
+	generate_grid_dungeon(10, 10, 0.55)  # 10x10 grid, 55% filled (organic layout)
 	print("DungeonEngine: Dungeon started at room_0_0")
 
 # Move player in a direction
@@ -215,6 +219,19 @@ func is_dungeon_complete() -> bool:
 		return true
 
 	return false
+
+# Check if the current room is the boss room
+func is_current_room_boss() -> bool:
+	var current_room = DungeonStateStore.get_current_room()
+	if not current_room:
+		return false
+
+	return current_room.room_type == "boss"
+
+# Notify that boss has been defeated (called after boss encounter is cleared)
+func notify_boss_defeated():
+	print("DungeonEngine: Boss defeated!")
+	boss_defeated.emit()
 
 # Debug: Print dungeon layout
 func _print_dungeon_layout():

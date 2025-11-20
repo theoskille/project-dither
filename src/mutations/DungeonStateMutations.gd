@@ -51,3 +51,27 @@ func set_room_encounter(room_id: String, encounter_id: String):
 	var old_encounter_id = room.encounter_id
 	room.encounter_id = encounter_id
 	DungeonStateStore._emit_change(property_path, old_encounter_id, encounter_id)
+
+# Set a room's type (normal or boss)
+func set_room_type(room_id: String, room_type: String):
+	var room = DungeonStateStore.get_room(room_id)
+	if not room:
+		push_error("DungeonStateMutations: Cannot set type for non-existent room '%s'" % room_id)
+		return
+
+	var property_path = "rooms.%s.room_type" % room_id
+	var old_room_type = room.room_type
+	room.room_type = room_type
+	DungeonStateStore._emit_change(property_path, old_room_type, room_type)
+
+# Increment enemies defeated counter
+func increment_enemies_defeated():
+	var old_value = DungeonStateStore.enemies_defeated
+	DungeonStateStore.enemies_defeated += 1
+	DungeonStateStore._emit_change("enemies_defeated", old_value, DungeonStateStore.enemies_defeated)
+
+# Increment rooms cleared counter
+func increment_rooms_cleared():
+	var old_value = DungeonStateStore.rooms_cleared
+	DungeonStateStore.rooms_cleared += 1
+	DungeonStateStore._emit_change("rooms_cleared", old_value, DungeonStateStore.rooms_cleared)

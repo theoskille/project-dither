@@ -13,6 +13,7 @@ var current_view: Control = null
 var dungeon_view: Control
 var combat_view: Control
 var victory_screen: Control
+var dungeon_victory_screen: Control
 
 func _ready():
 	# Set anchors to fill the screen
@@ -24,6 +25,7 @@ func _ready():
 
 	# Connect to engine signals
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
+	DungeonEngine.boss_defeated.connect(_on_boss_defeated)
 	CombatEngine.victory_achieved.connect(_on_victory_achieved)
 
 	# Start in dungeon mode
@@ -160,9 +162,61 @@ func _on_victory_continue_pressed():
 
 	# Clear the encounter from the current room
 	var current_room_id = DungeonStateStore.current_room_id
+	var current_room = DungeonStateStore.get_room(current_room_id)
+
+	# Track room cleared if it had an encounter
+	if current_room and current_room.encounter_id != "":
+		DungeonStateMutations.increment_rooms_cleared()
+
 	DungeonStateMutations.clear_room_encounter(current_room_id)
 
+	# Check if the boss was just defeated
+	if DungeonEngine.is_current_room_boss():
+		DungeonEngine.notify_boss_defeated()
+		return  # Don't switch back to dungeon view yet - boss_defeated signal will handle it
+
 	# Switch back to dungeon view
+	_switch_to_dungeon_view()
+
+func _on_boss_defeated():
+	print("Main: Boss defeated - showing dungeon victory screen")
+
+	# Create dungeon victory screen overlay
+	dungeon_victory_screen = Control.new()
+	dungeon_victory_screen.set_script(preload("res://src/ui/DungeonVictoryScreen.gd"))
+	dungeon_victory_screen.anchor_right = 1.0
+	dungeon_victory_screen.anchor_bottom = 1.0
+
+	# Add to tree (this triggers _ready())
+	add_child(dungeon_victory_screen)
+
+	# Connect to victory screen buttons
+	dungeon_victory_screen.main_menu_pressed.connect(_on_dungeon_victory_main_menu_pressed)
+	dungeon_victory_screen.continue_exploring_pressed.connect(_on_dungeon_victory_continue_pressed)
+
+func _on_dungeon_victory_main_menu_pressed():
+	print("Main: Dungeon victory - returning to main menu (restarting dungeon)")
+
+	# Remove dungeon victory screen
+	if dungeon_victory_screen:
+		remove_child(dungeon_victory_screen)
+		dungeon_victory_screen.queue_free()
+		dungeon_victory_screen = null
+
+	# Restart dungeon (in a real game, this would go to main menu)
+	DungeonEngine.start_dungeon()
+	_switch_to_dungeon_view()
+
+func _on_dungeon_victory_continue_pressed():
+	print("Main: Dungeon victory - continuing exploration")
+
+	# Remove dungeon victory screen
+	if dungeon_victory_screen:
+		remove_child(dungeon_victory_screen)
+		dungeon_victory_screen.queue_free()
+		dungeon_victory_screen = null
+
+	# Switch back to dungeon view to allow continued exploration
 	_switch_to_dungeon_view()
 
 func _on_inventory_opened():
