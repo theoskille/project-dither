@@ -159,7 +159,7 @@ func _update_display():
 
 func _calculate_xp_for_next_level() -> int:
 	"""Calculate XP needed for next level (engine logic mirrored for display)"""
-	return 100 * (PlayerStore.level + 1)
+	return 20 * (PlayerStore.level + 1)
 
 func _on_continue_pressed():
 	print("VictoryScreen: Continue button pressed")

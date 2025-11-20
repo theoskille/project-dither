@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_slime"]
+
+[resource]
+script = ExtResource("1_slime")
+enemy_id = "slime"
+enemy_name = "Slime"
+max_hp = 90
+max_vigor = 3
+base_stats = {
+"con": 10,
+"dex": 8,
+"int": 6,
+"luck": 7,
+"spd": 5,
+"str": 8
+}
+equipped_attacks = Array[String](["get_slimed", "consume"])
+passive_abilities = Array[String]([])
+xp_reward = 50

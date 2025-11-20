@@ -138,6 +138,17 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	if action_data.applies_effect_id != "":
 		_apply_effect_to_entity(target_id, action_data.applies_effect_id, action_data.effect_duration_override)
 
+	# Handle self-destruct attacks
+	if action_data.kills_user_on_use:
+		BattleStateMutations.set_entity_hp(caster_id, 0)
+		BattleStateMutations.set_entity_dead(caster_id, true)
+
+		# Track enemy defeats if caster was an enemy
+		if caster_id != "player":
+			DungeonStateMutations.increment_enemies_defeated()
+
+		_check_victory()
+
 	return true
 
 func _perform_action_legacy(move_data: Dictionary, caster: String, target: String) -> bool:
@@ -619,8 +630,8 @@ func _calculate_total_xp_reward() -> int:
 	return total_xp
 
 func _calculate_xp_for_level(level: int) -> int:
-	"""Calculate XP required to reach the given level (linear curve: 100 * level)"""
-	return 100 * level
+	"""Calculate XP required to reach the given level (linear curve: 20 * level)"""
+	return 20 * level
 
 func _is_entity_dead(entity_id: String) -> bool:
 	"""Check if an entity is dead"""

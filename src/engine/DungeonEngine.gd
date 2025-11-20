@@ -15,7 +15,7 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 	var rooms_dict = {}
 
 	# Define available encounters for random assignment
-	var available_encounters = ["goblin_ambush", "orc_patrol", "single_goblin", ""]  # "" = no encounter
+	var available_encounters = ["single_goblin", "slime_encounter", "tank_and_archer", ""]  # "" = no encounter
 
 	# Step 1: Grow dungeon organically using "grow-and-branch" algorithm
 	var total_positions = rows * cols
