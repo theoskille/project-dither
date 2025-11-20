@@ -22,6 +22,7 @@ EnemyDatabase="*res://src/data/EnemyDatabase.gd"
 EffectDatabase="*res://src/data/EffectDatabase.gd"
 PassiveAbilityDatabase="*res://src/data/PassiveAbilityDatabase.gd"
 EncounterDatabase="*res://src/data/EncounterDatabase.gd"
+CharacterClassDatabase="*res://src/data/CharacterClassDatabase.gd"
 BattleStateStore="*res://src/store/BattleStateStore.gd"
 BattleStateMutations="*res://src/mutations/BattleStateMutations.gd"
 CombatEngine="*res://src/engine/CombatEngine.gd"
@@ -31,6 +32,7 @@ DungeonEngine="*res://src/engine/DungeonEngine.gd"
 PlayerStore="*res://src/store/PlayerStore.gd"
 PlayerMutations="*res://src/mutations/PlayerMutations.gd"
 SkillTreeEngine="*res://src/engine/SkillTreeEngine.gd"
+CharacterClassEngine="*res://src/engine/CharacterClassEngine.gd"
 
 [display]
 

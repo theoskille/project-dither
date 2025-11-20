@@ -7,11 +7,23 @@ extends Node
 var skill_tree_nodes: Dictionary = {}  # skill_id -> SkillNodeData
 
 func _ready():
-	_load_skill_tree()
+	# Skill tree will be loaded when class is initialized
+	pass
 
-func _load_skill_tree():
-	"""Load all skill nodes from data directory"""
-	var skill_dir = "res://data/skills/"
+func load_class_skill_tree(class_id: String):
+	"""Load skill tree for a specific class"""
+	var class_data = CharacterClassDatabase.get_character_class(class_id)
+	if class_data == null:
+		push_error("SkillTreeEngine: Cannot load skill tree - class '%s' not found" % class_id)
+		return
+
+	_load_skill_tree_from_path(class_data.skill_tree_path)
+
+func _load_skill_tree_from_path(skill_dir: String):
+	"""Load all skill nodes from the specified directory"""
+	# Clear existing skill tree
+	skill_tree_nodes.clear()
+
 	var dir = DirAccess.open(skill_dir)
 
 	if dir == null:
@@ -33,7 +45,7 @@ func _load_skill_tree():
 		file_name = dir.get_next()
 
 	dir.list_dir_end()
-	print("SkillTreeEngine: Loaded %d skill nodes" % skill_tree_nodes.size())
+	print("SkillTreeEngine: Loaded %d skill nodes from %s" % [skill_tree_nodes.size(), skill_dir])
 
 func get_skill_node(skill_id: String) -> SkillNodeData:
 	"""Get a skill node by ID"""

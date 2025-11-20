@@ -10,6 +10,7 @@ func reset_battle():
 	BattleStateMutations.clear_enemies()
 	BattleStateMutations.reset_turn_state()
 	BattleStateMutations.reset_player()
+	BattleStateMutations.sync_player_from_store()  # Sync player with persistent progression data
 	print("CombatEngine: Battle state reset complete")
 
 func initialize_enemies(enemy_configs: Array):

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CharacterClassData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/CharacterClassData.gd" id="1_brawler"]
+
+[resource]
+script = ExtResource("1_brawler")
+class_id = "brawler"
+display_name = "Brawler"
+description = "A fierce melee combatant who excels at close-range combat. Brawlers rely on raw strength and constitution to overpower their enemies with devastating physical attacks."
+base_stats = {
+"con": 12,
+"dex": 8,
+"int": 6,
+"luck": 5,
+"spd": 7,
+"str": 14
+}
+skill_tree_path = "res://data/skills/brawler/"
+starting_unlocked_skills = Array[String](["slash"])
+starting_passive_abilities = Array[String]([])

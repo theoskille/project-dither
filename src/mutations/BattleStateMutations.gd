@@ -203,3 +203,37 @@ func reset_player():
 	BattleStateStore._emit_change("player_state.position", null, 0)
 	BattleStateStore._emit_change("player_state.active_effects", null, empty_effects)
 	print("BattleStateMutations: Reset player to defaults")
+
+# Sync player_state with PlayerStore progression data
+func sync_player_from_store():
+	"""Sync player battle state with persistent PlayerStore data"""
+	var player = BattleStateStore.battle_state.player_state
+
+	# Sync equipped attacks from PlayerStore
+	var old_attacks = player.equipped_attacks
+	player.equipped_attacks = PlayerStore.equipped_attacks.duplicate()
+	BattleStateStore._emit_change("player_state.equipped_attacks", old_attacks, player.equipped_attacks)
+
+	# Sync passive abilities from PlayerStore
+	var old_passives = player.passive_abilities
+	player.passive_abilities = PlayerStore.passive_abilities.duplicate()
+	BattleStateStore._emit_change("player_state.passive_abilities", old_passives, player.passive_abilities)
+
+	# Sync base stats from PlayerStore
+	var old_stats = player.base_stats
+	player.base_stats = PlayerStore.base_stats.duplicate()
+	BattleStateStore._emit_change("player_state.base_stats", old_stats, player.base_stats)
+
+	# Calculate max HP based on constitution (CON * 5 + base 100)
+	var old_max_hp = player.max_hp
+	var new_max_hp = 100 + (PlayerStore.base_stats.get("con", 10) * 5)
+	player.max_hp = new_max_hp
+	player.current_hp = new_max_hp  # Start at full HP
+	BattleStateStore._emit_change("player_state.max_hp", old_max_hp, new_max_hp)
+	BattleStateStore._emit_change("player_state.current_hp", null, new_max_hp)
+
+	# Max vigor stays at 3 for now (could be stat-based in future)
+	player.max_vigor = 3
+	player.current_vigor = 3
+
+	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Stats: %s, MaxHP: %d" % [player.equipped_attacks, player.base_stats, player.max_hp])

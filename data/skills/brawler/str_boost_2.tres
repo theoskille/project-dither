@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillNodeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/SkillNodeData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+node_id = "str_boost_2"
+node_name = "Strength II"
+description = "Further increase your Strength by 3"
+icon_path = ""
+grid_x = 2
+grid_y = 0
+skill_point_cost = 1
+level_requirement = 3
+prerequisite_node_ids = Array[String](["str_boost_1"])
+skill_type = "stat_bonus"
+grants_attack_id = ""
+grants_passive_id = ""
+stat_bonus_type = "str"
+stat_bonus_amount = 3
+upgrades_attack_id = ""
+damage_bonus = 0
+vigor_cost_reduction = 0
+cooldown_reduction = 0

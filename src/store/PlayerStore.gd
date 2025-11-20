@@ -9,8 +9,10 @@ signal state_changed(property_path: String, old_value, new_value)
 signal xp_gained(amount: int, new_total: int)
 signal level_up(new_level: int)
 signal skill_unlocked(skill_id: String)
+signal character_class_changed(new_class_id: String)
 
 # Player persistent data
+var selected_character_class: String = ""
 var level: int = 1
 var current_xp: int = 0
 
@@ -18,25 +20,20 @@ var current_xp: int = 0
 var skill_points: int = 0
 var unlocked_skills: Array[String] = []
 
+# Stats will be initialized from class data
 var base_stats: Dictionary = {
 	"str": 10,
-	"dex": 8,
-	"int": 12,
-	"con": 9,
-	"spd": 7,
-	"luck": 5
+	"dex": 10,
+	"int": 10,
+	"con": 10,
+	"spd": 10,
+	"luck": 10
 }
 
-var equipped_attacks: Array[String] = [
-	"slash",
-	"magic_bolt",
-	"dash_strike",
-	"knockback_strike"
-]
+# Attacks and passives will be granted by unlocking skills
+var equipped_attacks: Array[String] = []
 
-var passive_abilities: Array[String] = [
-	"bloodthirst"
-]
+var passive_abilities: Array[String] = []
 
 func _ready():
 	pass  # Player data initialized with default values

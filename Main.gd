@@ -19,6 +19,9 @@ func _ready():
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 
+	# Initialize player class (for now, hardcoded to Brawler)
+	CharacterClassEngine.initialize_player_class("brawler")
+
 	# Connect to engine signals
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
 	CombatEngine.victory_achieved.connect(_on_victory_achieved)

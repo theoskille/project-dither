@@ -9,6 +9,11 @@ signal back_button_pressed()
 enum Tab { STATS, ATTACKS, PASSIVES, SKILLS }
 var current_tab: Tab = Tab.STATS
 
+# Attack detail panel references
+var selected_attack_id: String = ""
+var attack_detail_info_vbox: VBoxContainer = null
+var attack_detail_button_container: CenterContainer = null
+
 func _ready():
 	# Set anchors to fill the screen
 	anchor_right = 1.0
@@ -152,33 +157,353 @@ func _build_stats_panel(parent: VBoxContainer):
 		stats_vbox.add_child(stat_label)
 
 func _build_attacks_panel(parent: VBoxContainer):
-	"""Build the equipped attacks panel"""
-	var attacks_panel = PanelContainer.new()
-	attacks_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	parent.add_child(attacks_panel)
-
-	var attacks_vbox = VBoxContainer.new()
-	attacks_vbox.add_theme_constant_override("separation", 10)
-	attacks_panel.add_child(attacks_vbox)
-
-	var attacks_header = Label.new()
-	attacks_header.text = "Equipped Attacks"
-	attacks_header.add_theme_font_size_override("font_size", 18)
-	attacks_vbox.add_child(attacks_header)
+	"""Build the attacks panel with three columns: equipped, unlocked, detail"""
+	# Main horizontal container (left: equipped, middle: unlocked, right: detail)
+	var main_hbox = HBoxContainer.new()
+	main_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_hbox.add_theme_constant_override("separation", 15)
+	parent.add_child(main_hbox)
 
 	var equipped_attacks = PlayerStore.equipped_attacks
+	var unlocked_attack_ids = _get_unlocked_attack_ids()
+
+	# Left panel: Equipped attacks
+	var equipped_panel = _build_equipped_panel(equipped_attacks)
+	equipped_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_hbox.add_child(equipped_panel)
+
+	# Middle panel: Unlocked attacks
+	var unlocked_panel = _build_unlocked_panel(equipped_attacks, unlocked_attack_ids)
+	unlocked_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_hbox.add_child(unlocked_panel)
+
+	# Right panel: Attack detail panel
+	var detail_panel = _build_attack_detail_panel()
+	detail_panel.custom_minimum_size = Vector2(350, 0)
+	main_hbox.add_child(detail_panel)
+
+	# Initialize detail panel
+	_update_attack_detail_panel()
+
+func _build_equipped_panel(equipped_attacks: Array[String]) -> PanelContainer:
+	"""Build the equipped attacks panel"""
+	var panel = PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	# Header
+	var header = Label.new()
+	header.text = "EQUIPPED (%d/4)" % equipped_attacks.size()
+	header.add_theme_font_size_override("font_size", 16)
+	header.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(header)
+
+	var separator = HSeparator.new()
+	vbox.add_child(separator)
+
+	# Scrollable list
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var list_vbox = VBoxContainer.new()
+	list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_vbox.add_theme_constant_override("separation", 5)
+	scroll.add_child(list_vbox)
+
 	if equipped_attacks.size() > 0:
 		for attack_id in equipped_attacks:
-			var attack_label = Label.new()
-			# Format attack name: "dash_strike" -> "Dash Strike"
-			var display_name = attack_id.replace("_", " ").capitalize()
-			attack_label.text = "• %s" % display_name
-			attacks_vbox.add_child(attack_label)
+			var button = _create_attack_button(attack_id, true)
+			list_vbox.add_child(button)
 	else:
-		var no_attacks_label = Label.new()
-		no_attacks_label.text = "No attacks equipped"
-		no_attacks_label.modulate = Color(0.7, 0.7, 0.7)
-		attacks_vbox.add_child(no_attacks_label)
+		var empty_label = Label.new()
+		empty_label.text = "No attacks equipped"
+		empty_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		list_vbox.add_child(empty_label)
+
+	return panel
+
+func _build_unlocked_panel(equipped_attacks: Array[String], unlocked_attack_ids: Array[String]) -> PanelContainer:
+	"""Build the unlocked attacks panel"""
+	var panel = PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	# Header
+	var header = Label.new()
+	header.text = "UNLOCKED"
+	header.add_theme_font_size_override("font_size", 16)
+	header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(header)
+
+	var separator = HSeparator.new()
+	vbox.add_child(separator)
+
+	# Scrollable list
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var list_vbox = VBoxContainer.new()
+	list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_vbox.add_theme_constant_override("separation", 5)
+	scroll.add_child(list_vbox)
+
+	# Get unequipped attacks
+	var unequipped_attacks = []
+	for attack_id in unlocked_attack_ids:
+		if not attack_id in equipped_attacks:
+			unequipped_attacks.append(attack_id)
+
+	if unequipped_attacks.size() > 0:
+		for attack_id in unequipped_attacks:
+			var button = _create_attack_button(attack_id, false)
+			list_vbox.add_child(button)
+	else:
+		var empty_label = Label.new()
+		if unlocked_attack_ids.size() == 0:
+			empty_label.text = "No attacks unlocked.\nUnlock via Skill Tree."
+		else:
+			empty_label.text = "All attacks equipped!"
+		empty_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		list_vbox.add_child(empty_label)
+
+	return panel
+
+func _create_attack_button(attack_id: String, is_equipped: bool) -> Button:
+	"""Create a button for an attack in the list"""
+	var button = Button.new()
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.clip_text = false
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	button.custom_minimum_size = Vector2(0, 40)
+
+	var action_data = AttackDatabase.get_action(attack_id)
+	var display_name = action_data.action_name if action_data else attack_id.replace("_", " ").capitalize()
+
+	if is_equipped:
+		button.text = "✓ %s" % display_name
+	else:
+		button.text = "  %s" % display_name
+
+	# Highlight if selected
+	if attack_id == selected_attack_id:
+		button.add_theme_color_override("font_color", Color(0.0, 0.0, 0.0))
+
+	button.pressed.connect(func(): _on_attack_selected(attack_id))
+	return button
+
+func _build_attack_detail_panel() -> PanelContainer:
+	"""Build the attack detail panel (right side)"""
+	var panel = PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 15)
+	margin.add_theme_constant_override("margin_right", 15)
+	margin.add_theme_constant_override("margin_top", 15)
+	margin.add_theme_constant_override("margin_bottom", 15)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.name = "TitleLabel"
+	title.text = "Attack Details"
+	title.add_theme_font_size_override("font_size", 20)
+	vbox.add_child(title)
+
+	var separator = HSeparator.new()
+	vbox.add_child(separator)
+
+	# Info section (scrollable)
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var info_vbox = VBoxContainer.new()
+	info_vbox.name = "InfoVBox"
+	info_vbox.add_theme_constant_override("separation", 8)
+	scroll.add_child(info_vbox)
+
+	attack_detail_info_vbox = info_vbox
+
+	# Button container
+	var button_container = CenterContainer.new()
+	button_container.name = "ButtonContainer"
+	vbox.add_child(button_container)
+
+	attack_detail_button_container = button_container
+
+	return panel
+
+func _on_attack_selected(attack_id: String):
+	"""Handle attack selection"""
+	selected_attack_id = attack_id
+	_update_attack_detail_panel()
+	_switch_tab(Tab.ATTACKS)  # Refresh to show selection highlight
+
+func _update_attack_detail_panel():
+	"""Update the attack detail panel with selected attack info"""
+	if not attack_detail_info_vbox or not attack_detail_button_container:
+		return
+
+	# Clear existing content
+	for child in attack_detail_info_vbox.get_children():
+		child.queue_free()
+
+	for child in attack_detail_button_container.get_children():
+		child.queue_free()
+
+	if selected_attack_id == "":
+		var label = Label.new()
+		label.text = "Select an attack to view details"
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		attack_detail_info_vbox.add_child(label)
+		return
+
+	var action_data = AttackDatabase.get_action(selected_attack_id)
+	if not action_data:
+		return
+
+	var is_equipped = selected_attack_id in PlayerStore.equipped_attacks
+
+	# Attack name
+	var name_label = Label.new()
+	name_label.text = action_data.action_name
+	name_label.add_theme_font_size_override("font_size", 18)
+	name_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.8))
+	attack_detail_info_vbox.add_child(name_label)
+
+	# Stats section
+	var stats_spacer = Control.new()
+	stats_spacer.custom_minimum_size = Vector2(0, 10)
+	attack_detail_info_vbox.add_child(stats_spacer)
+
+	var stats_label = Label.new()
+	stats_label.text = "STATS:"
+	stats_label.add_theme_font_size_override("font_size", 14)
+	attack_detail_info_vbox.add_child(stats_label)
+
+	# Damage
+	if action_data.base_damage > 0:
+		var dmg_label = Label.new()
+		dmg_label.text = "Base Damage: %d" % action_data.base_damage
+		attack_detail_info_vbox.add_child(dmg_label)
+
+	# Vigor cost
+	var vigor_label = Label.new()
+	vigor_label.text = "Vigor Cost: %d" % action_data.vigor_cost
+	attack_detail_info_vbox.add_child(vigor_label)
+
+	# Range
+	var range_label = Label.new()
+	range_label.text = "Range: %d-%d" % [action_data.min_range, action_data.max_range]
+	attack_detail_info_vbox.add_child(range_label)
+
+	# Stat modifiers
+	if action_data.str_modifier > 0:
+		var str_label = Label.new()
+		str_label.text = "STR Modifier: %.1fx" % action_data.str_modifier
+		attack_detail_info_vbox.add_child(str_label)
+
+	if action_data.dex_modifier > 0:
+		var dex_label = Label.new()
+		dex_label.text = "DEX Modifier: %.1fx" % action_data.dex_modifier
+		attack_detail_info_vbox.add_child(dex_label)
+
+	if action_data.int_modifier > 0:
+		var int_label = Label.new()
+		int_label.text = "INT Modifier: %.1fx" % action_data.int_modifier
+		attack_detail_info_vbox.add_child(int_label)
+
+	# Status
+	var status_spacer = Control.new()
+	status_spacer.custom_minimum_size = Vector2(0, 15)
+	attack_detail_info_vbox.add_child(status_spacer)
+
+	var status_label = Label.new()
+	if is_equipped:
+		status_label.text = "✓ EQUIPPED"
+		status_label.add_theme_color_override("font_color", Color.GREEN)
+	else:
+		status_label.text = "NOT EQUIPPED"
+		status_label.add_theme_color_override("font_color", Color.YELLOW)
+	status_label.add_theme_font_size_override("font_size", 16)
+	attack_detail_info_vbox.add_child(status_label)
+
+	# Equip/Unequip button
+	var button = Button.new()
+	button.custom_minimum_size = Vector2(200, 50)
+	button.add_theme_font_size_override("font_size", 16)
+
+	if is_equipped:
+		button.text = "UNEQUIP"
+		button.pressed.connect(func(): _on_unequip_pressed(selected_attack_id))
+	else:
+		if PlayerStore.equipped_attacks.size() >= 4:
+			button.text = "Max 4 Equipped"
+			button.disabled = true
+		else:
+			button.text = "EQUIP"
+			button.pressed.connect(func(): _on_equip_pressed(selected_attack_id))
+
+	attack_detail_button_container.add_child(button)
+
+func _on_equip_pressed(attack_id: String):
+	"""Handle equip button press"""
+	PlayerMutations.equip_attack(attack_id)
+	_update_attack_detail_panel()
+
+func _on_unequip_pressed(attack_id: String):
+	"""Handle unequip button press"""
+	PlayerMutations.unequip_attack(attack_id)
+	_update_attack_detail_panel()
+
+func _get_unlocked_attack_ids() -> Array[String]:
+	"""Get all attack IDs from unlocked skills"""
+	var attack_ids: Array[String] = []
+
+	for skill_id in PlayerStore.unlocked_skills:
+		var skill_node = SkillTreeEngine.get_skill_node(skill_id)
+		if skill_node and skill_node.skill_type == "attack":
+			if skill_node.grants_attack_id != "":
+				attack_ids.append(skill_node.grants_attack_id)
+
+	return attack_ids
 
 func _build_passives_panel(parent: VBoxContainer):
 	"""Build the passive abilities panel"""

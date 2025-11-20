@@ -80,7 +80,7 @@ func add_stat_bonus(stat_name: String, amount: int):
 	print("PlayerMutations: Added +%d to %s (new value: %d)" % [amount, stat_name, PlayerStore.base_stats[stat_name]])
 
 func add_attack(attack_id: String):
-	"""Add an attack to the player's equipped attacks"""
+	"""Add an attack to the player's equipped attacks (used by skill tree unlocks)"""
 	if attack_id in PlayerStore.equipped_attacks:
 		push_warning("PlayerMutations: Attack '%s' already equipped" % attack_id)
 		return
@@ -89,6 +89,32 @@ func add_attack(attack_id: String):
 	PlayerStore.equipped_attacks.append(attack_id)
 	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
 	print("PlayerMutations: Added attack '%s'" % attack_id)
+
+func equip_attack(attack_id: String):
+	"""Equip an attack (user-initiated, enforces max 4 limit)"""
+	if attack_id in PlayerStore.equipped_attacks:
+		push_warning("PlayerMutations: Attack '%s' is already equipped" % attack_id)
+		return
+
+	if PlayerStore.equipped_attacks.size() >= 4:
+		push_error("PlayerMutations: Cannot equip '%s' - maximum of 4 attacks allowed" % attack_id)
+		return
+
+	var old_attacks = PlayerStore.equipped_attacks.duplicate()
+	PlayerStore.equipped_attacks.append(attack_id)
+	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
+	print("PlayerMutations: Equipped attack '%s' (%d/4 equipped)" % [attack_id, PlayerStore.equipped_attacks.size()])
+
+func unequip_attack(attack_id: String):
+	"""Unequip an attack"""
+	if not attack_id in PlayerStore.equipped_attacks:
+		push_warning("PlayerMutations: Attack '%s' is not equipped" % attack_id)
+		return
+
+	var old_attacks = PlayerStore.equipped_attacks.duplicate()
+	PlayerStore.equipped_attacks.erase(attack_id)
+	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
+	print("PlayerMutations: Unequipped attack '%s' (%d/4 equipped)" % [attack_id, PlayerStore.equipped_attacks.size()])
 
 func add_passive_ability(passive_id: String):
 	"""Add a passive ability to the player"""
@@ -113,3 +139,18 @@ func reset_progression():
 	PlayerStore._emit_change("current_xp", old_xp, 0)
 
 	print("PlayerMutations: Reset progression - Level 1, 0 XP")
+
+func set_character_class(class_id: String):
+	"""Set the player's selected character class"""
+	var old_class = PlayerStore.selected_character_class
+	PlayerStore.selected_character_class = class_id
+	PlayerStore._emit_change("selected_character_class", old_class, class_id)
+	PlayerStore.character_class_changed.emit(class_id)
+	print("PlayerMutations: Set character class to '%s'" % class_id)
+
+func set_base_stats(new_stats: Dictionary):
+	"""Set the player's base stats (used during class initialization)"""
+	var old_stats = PlayerStore.base_stats.duplicate()
+	PlayerStore.base_stats = new_stats.duplicate()
+	PlayerStore._emit_change("base_stats", old_stats, PlayerStore.base_stats)
+	print("PlayerMutations: Set base stats to %s" % PlayerStore.base_stats)
