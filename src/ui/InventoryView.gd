@@ -35,6 +35,7 @@ func _build_ui():
 
 	# Main vertical layout
 	var main_vbox = VBoxContainer.new()
+	main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_vbox.add_theme_constant_override("separation", 15)
 	margin.add_child(main_vbox)
 
@@ -97,6 +98,7 @@ func _build_ui():
 
 	var content_vbox = VBoxContainer.new()
 	content_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content_vbox.add_theme_constant_override("separation", 20)
 	scroll.add_child(content_vbox)
 
@@ -180,7 +182,7 @@ func _build_attacks_panel(parent: VBoxContainer):
 
 	# Right panel: Attack detail panel
 	var detail_panel = _build_attack_detail_panel()
-	detail_panel.custom_minimum_size = Vector2(350, 0)
+	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_hbox.add_child(detail_panel)
 
 	# Initialize detail panel
@@ -189,6 +191,7 @@ func _build_attacks_panel(parent: VBoxContainer):
 func _build_equipped_panel(equipped_attacks: Array[String]) -> PanelContainer:
 	"""Build the equipped attacks panel"""
 	var panel = PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	var margin = MarginContainer.new()
@@ -199,6 +202,7 @@ func _build_equipped_panel(equipped_attacks: Array[String]) -> PanelContainer:
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 8)
 	margin.add_child(vbox)
 
@@ -215,6 +219,7 @@ func _build_equipped_panel(equipped_attacks: Array[String]) -> PanelContainer:
 
 	# Scrollable list
 	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(scroll)
 
@@ -240,6 +245,7 @@ func _build_equipped_panel(equipped_attacks: Array[String]) -> PanelContainer:
 func _build_unlocked_panel(equipped_attacks: Array[String], unlocked_attack_ids: Array[String]) -> PanelContainer:
 	"""Build the unlocked attacks panel"""
 	var panel = PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	var margin = MarginContainer.new()
@@ -250,6 +256,7 @@ func _build_unlocked_panel(equipped_attacks: Array[String], unlocked_attack_ids:
 	panel.add_child(margin)
 
 	var vbox = VBoxContainer.new()
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 8)
 	margin.add_child(vbox)
 
@@ -266,6 +273,7 @@ func _build_unlocked_panel(equipped_attacks: Array[String], unlocked_attack_ids:
 
 	# Scrollable list
 	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(scroll)
 
