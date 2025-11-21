@@ -29,8 +29,13 @@ func initialize_enemies(enemy_configs: Array):
 func execute_move(action_data: ActionData, caster: String, target: String) -> bool:
 	if not can_execute_action(action_data, caster, target):
 		return false
-	
+
 	BattleStateMutations.consume_vigor(caster, action_data.vigor_cost)
+
+	# Set cooldown if the action has one
+	if action_data.cooldown > 0:
+		BattleStateMutations.set_action_cooldown(caster, action_data.action_id, action_data.cooldown)
+
 	return _perform_action(action_data, caster, target)
 
 func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
@@ -185,7 +190,21 @@ func process_turn_end():
 	_process_damage_over_time()
 	_decrement_effect_durations()
 	BattleStateMutations.set_turn_phase("turn_end")
+
+	# Check if we're at the end of a round (about to loop back to turn index 0)
+	var current_index = BattleStateStore.get_state_value("turn_state.current_turn_index")
+	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
+	var is_round_end = (current_index == turn_order.size() - 1)
+
 	BattleStateMutations.advance_turn()
+
+	# If we just completed a round, decrement all cooldowns
+	if is_round_end:
+		BattleStateMutations.increment_round_counter()
+		for entity_id in turn_order:
+			BattleStateMutations.decrement_all_cooldowns(entity_id)
+		print("CombatEngine: Round completed - cooldowns decremented for all entities")
+
 	BattleStateMutations.set_turn_phase("action")
 
 func can_execute_action(action_data: ActionData, caster_id: String, target_id: String) -> bool:
@@ -198,6 +217,12 @@ func can_execute_action(action_data: ActionData, caster_id: String, target_id: S
 
 	var caster_entity = _get_entity_by_id(caster_id)
 	if not caster_entity or caster_entity.current_vigor < action_data.vigor_cost:
+		return false
+
+	# Check if action is on cooldown
+	if caster_entity.active_cooldowns.has(action_data.action_id):
+		var remaining_rounds = caster_entity.active_cooldowns[action_data.action_id]
+		print("CombatEngine: %s cannot use '%s' - on cooldown for %d more rounds" % [caster_id, action_data.action_id, remaining_rounds])
 		return false
 
 	var distance = _get_distance_between_entities(caster_id, target_id)
@@ -216,6 +241,11 @@ func start_battle():
 	# Generate speed-based turn order
 	var turn_order = _generate_turn_order()
 	BattleStateMutations.set_turn_order(turn_order)
+
+	# Clear all cooldowns at battle start
+	for entity_id in turn_order:
+		BattleStateMutations.clear_entity_cooldowns(entity_id)
+	print("CombatEngine: Cleared all cooldowns at battle start")
 
 	# Start the first turn
 	if turn_order.size() > 0:

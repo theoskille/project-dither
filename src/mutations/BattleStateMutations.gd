@@ -257,3 +257,59 @@ func save_player_hp_to_store():
 	PlayerStore.current_hp = player.current_hp
 	PlayerStore._emit_change("current_hp", old_hp, player.current_hp)
 	print("BattleStateMutations: Saved player HP to PlayerStore - HP: %d" % player.current_hp)
+
+# Cooldown management functions
+func set_action_cooldown(entity_id: String, action_id: String, rounds: int):
+	"""Set a cooldown for a specific action on an entity"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_cooldowns")
+	var old_cooldowns = entity.active_cooldowns.duplicate()
+
+	if rounds > 0:
+		entity.active_cooldowns[action_id] = rounds
+	else:
+		entity.active_cooldowns.erase(action_id)
+
+	BattleStateStore._emit_change(property_path, old_cooldowns, entity.active_cooldowns)
+
+func decrement_all_cooldowns(entity_id: String):
+	"""Decrement all active cooldowns for an entity by 1 round"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_cooldowns")
+	var old_cooldowns = entity.active_cooldowns.duplicate()
+
+	var actions_to_remove = []
+	for action_id in entity.active_cooldowns.keys():
+		entity.active_cooldowns[action_id] -= 1
+		if entity.active_cooldowns[action_id] <= 0:
+			actions_to_remove.append(action_id)
+
+	# Remove cooldowns that have expired
+	for action_id in actions_to_remove:
+		entity.active_cooldowns.erase(action_id)
+
+	BattleStateStore._emit_change(property_path, old_cooldowns, entity.active_cooldowns)
+
+func clear_entity_cooldowns(entity_id: String):
+	"""Clear all cooldowns for an entity"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "active_cooldowns")
+	var old_cooldowns = entity.active_cooldowns.duplicate()
+	entity.active_cooldowns = {}
+	BattleStateStore._emit_change(property_path, old_cooldowns, {})
+
+func increment_round_counter():
+	"""Increment the rounds_completed counter in turn state"""
+	var old_rounds = BattleStateStore.get_state_value("turn_state.rounds_completed")
+	var new_rounds = old_rounds + 1
+	BattleStateStore.battle_state.turn_state.rounds_completed = new_rounds
+	BattleStateStore._emit_change("turn_state.rounds_completed", old_rounds, new_rounds)

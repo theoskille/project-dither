@@ -52,10 +52,11 @@ func _on_state_changed(property_path: String, _old_value, _new_value):
 	if property_path.contains("%s_state.equipped_attacks" % entity_name) or property_path.contains("enemies."):
 		_rebuild_action_buttons()
 
-	# Update button states when turn changes, vigor changes, or positions change
+	# Update button states when turn changes, vigor changes, positions change, or cooldowns change
 	if (property_path.ends_with("current_turn_index") or
 		property_path.contains("%s_state.current_vigor" % entity_name) or
-		property_path.contains("position")):
+		property_path.contains("position") or
+		property_path.contains("active_cooldowns")):
 		_update_buttons()
 
 func _rebuild_action_buttons():
@@ -79,7 +80,8 @@ func _rebuild_action_buttons():
 			continue
 
 		var button = Button.new()
-		button.text = "%s (Range %d-%d)" % [action_data.action_name, action_data.min_range, action_data.max_range]
+		# Initial text will be updated in _update_buttons()
+		button.text = action_data.action_name
 		button.pressed.connect(_on_action_button_pressed.bind(action_id))
 
 		# Insert at the current position and increment for next button
@@ -92,6 +94,7 @@ func _update_buttons():
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var is_my_turn = (current_entity == entity_name)
 	var current_vigor = BattleStateStore.get_state_value("%s_state.current_vigor" % entity_name) if entity_name == "player" else 0
+	var active_cooldowns = BattleStateStore.get_state_value("%s_state.active_cooldowns" % entity_name) if entity_name == "player" else {}
 
 	# For enemies, check if they exist in the enemies array
 	if entity_name.begins_with("enemy_"):
@@ -106,8 +109,9 @@ func _update_buttons():
 			return
 		var enemy = BattleStateStore.battle_state.enemies[index]
 		current_vigor = enemy.current_vigor
+		active_cooldowns = enemy.active_cooldowns
 
-	# Update action buttons (basic enabled/disabled based on turn and vigor)
+	# Update action buttons (check turn, vigor, and cooldowns)
 	for i in range(action_buttons.size()):
 		var button = action_buttons[i]
 		var equipped_attacks = BattleStateStore.get_state_value("%s_state.equipped_attacks" % entity_name) if entity_name == "player" else null
@@ -119,7 +123,22 @@ func _update_buttons():
 		if equipped_attacks != null and i < equipped_attacks.size():
 			var action_id = equipped_attacks[i]
 			var action = AttackDatabase.get_action(action_id)
-			button.disabled = not is_my_turn or (action and current_vigor < action.vigor_cost)
+
+			if action:
+				# Check if action is on cooldown
+				var is_on_cooldown = active_cooldowns.has(action_id)
+				var cooldown_remaining = active_cooldowns.get(action_id, 0)
+
+				# Update button text to show cooldown or range
+				if is_on_cooldown:
+					button.text = "%s (Cooldown: %d)" % [action.action_name, cooldown_remaining]
+				else:
+					button.text = "%s (Range %d-%d)" % [action.action_name, action.min_range, action.max_range]
+
+				# Disable if not player's turn, insufficient vigor, or on cooldown
+				button.disabled = not is_my_turn or current_vigor < action.vigor_cost or is_on_cooldown
+			else:
+				button.disabled = true
 		else:
 			button.disabled = true
 

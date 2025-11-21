@@ -8,6 +8,7 @@ action_id = "get_slimed"
 action_name = "Get Slimed!"
 action_type = "attack"
 vigor_cost = 1
+cooldown = 2
 base_damage = 6
 str_modifier = 0.0
 dex_modifier = 0.0

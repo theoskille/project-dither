@@ -5,6 +5,7 @@ extends Resource
 @export var action_name: String = ""
 @export var action_type: String = "attack"  # "attack", "movement", "magic", "special"
 @export var vigor_cost: int = 1
+@export var cooldown: int = 0  # Number of rounds to wait before action can be used again (0 = no cooldown)
 @export var base_damage: int = 0
 @export var str_modifier: float = 0.0
 @export var dex_modifier: float = 0.0
