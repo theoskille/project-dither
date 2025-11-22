@@ -11,6 +11,7 @@ func reset_battle():
 	BattleStateMutations.reset_turn_state()
 	BattleStateMutations.reset_player()
 	BattleStateMutations.sync_player_from_store()  # Sync player with persistent progression data
+	_update_entity_dodge_chance("player")  # Calculate initial dodge chance
 	print("CombatEngine: Battle state reset complete")
 
 func initialize_enemies(enemy_configs: Array):
@@ -25,6 +26,11 @@ func initialize_enemies(enemy_configs: Array):
 
 		BattleStateMutations.add_enemy_to_battle(enemy_data, position)
 		print("CombatEngine: Initialized enemy '%s' at position %d" % [enemy_data.enemy_name, position])
+
+	# Update dodge chance for all enemies
+	var enemies = BattleStateStore.battle_state.enemies
+	for i in range(enemies.size()):
+		_update_entity_dodge_chance("enemy_%d" % i)
 
 func execute_move(action_data: ActionData, caster: String, target: String) -> bool:
 	if not can_execute_action(action_data, caster, target):
@@ -430,6 +436,14 @@ func _calculate_dodge_chance(entity_id: String) -> float:
 
 	return dodge_chance
 
+func _update_entity_dodge_chance(entity_id: String):
+	"""
+	Calculate and update an entity's dodge chance in the state.
+	Should be called whenever dex, spd, or effects change.
+	"""
+	var new_dodge = _calculate_dodge_chance(entity_id)
+	BattleStateMutations.set_entity_dodge_chance(entity_id, new_dodge)
+
 func _check_attack_hits(action: ActionData, target_id: String) -> bool:
 	"""
 	Determine if an attack hits or misses based on accuracy vs dodge.
@@ -515,6 +529,11 @@ func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_over
 	BattleStateMutations.add_effect_to_entity(entity_id, effect)
 	print("CombatEngine: Applied effect '%s' to %s (duration: %d)" % [effect_id, entity_id, effect.remaining_duration])
 
+	# Update dodge chance if effect modifies dex or spd
+	if (effect.dex_modifier != 0 or effect.spd_modifier != 0 or
+		effect.percent_dex_modifier != 0 or effect.percent_spd_modifier != 0):
+		_update_entity_dodge_chance(entity_id)
+
 func _process_damage_over_time():
 	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
 	for entity_id in turn_order:
@@ -540,9 +559,20 @@ func _decrement_effect_durations():
 		if not entity:
 			continue
 
+		var dodge_needs_update = false
 		for i in range(entity.active_effects.size() - 1, -1, -1):
 			if entity.active_effects[i].remaining_duration <= 0:
+				var expired_effect = entity.active_effects[i]
+				# Check if removing this effect affects dodge
+				if (expired_effect.dex_modifier != 0 or expired_effect.spd_modifier != 0 or
+					expired_effect.percent_dex_modifier != 0 or expired_effect.percent_spd_modifier != 0):
+					dodge_needs_update = true
+
 				BattleStateMutations.remove_effect_from_entity(entity_id, i)
+
+		# Update dodge if any dex/spd effects expired
+		if dodge_needs_update:
+			_update_entity_dodge_chance(entity_id)
 
 func _trigger_passives(entity_id: String, trigger_type: String, context_target: String = ""):
 	"""

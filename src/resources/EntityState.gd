@@ -10,6 +10,7 @@ extends Resource
 @export var position: int = 0
 @export var is_dead: bool = false
 @export var base_stats: Dictionary = {"str": 10, "dex": 8, "int": 12, "con": 9, "spd": 7, "luck": 5}
+@export var dodge_chance: float = 0.0  # Calculated from dex and spd: (dex * 0.6) + (spd * 0.4)
 @export var active_effects: Array[EffectState] = []
 @export var active_cooldowns: Dictionary = {}  # Maps action_id -> remaining_rounds
 @export var equipped_attacks: Array[String] = []

@@ -58,6 +58,11 @@ func _build_panel():
 		stat_label.name = stat_name
 		stats_container.add_child(stat_label)
 
+	# Add dodge chance label
+	var dodge_label = Label.new()
+	dodge_label.name = "DODGE"
+	stats_container.add_child(dodge_label)
+
 func _on_state_changed(property_path: String, _old_value, _new_value):
 	# Update when any property of this entity changes
 	# Handle both old format (player_state) and new format (enemies.0)
@@ -105,3 +110,8 @@ func _update_display():
 			var stat_label = stats_container.get_child(i)
 			if stat_label != null and entity.base_stats.has(stat_key):
 				stat_label.text = "%s: %d" % [stat_key.to_upper(), entity.base_stats[stat_key]]
+
+		# Update dodge chance (7th child in stats_container)
+		var dodge_label = stats_container.get_child(6)  # Index 6 = 7th child (after 6 stats)
+		if dodge_label != null:
+			dodge_label.text = "DODGE: %.1f%%" % entity.dodge_chance

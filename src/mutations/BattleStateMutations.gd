@@ -111,6 +111,16 @@ func set_entity_position(entity_id: String, new_position: int):
 	entity.position = new_position
 	BattleStateStore._emit_change(property_path, old_position, new_position)
 
+func set_entity_dodge_chance(entity_id: String, new_dodge: float):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "dodge_chance")
+	var old_dodge = entity.dodge_chance
+	entity.dodge_chance = new_dodge
+	BattleStateStore._emit_change(property_path, old_dodge, new_dodge)
+
 func decrement_effect_durations(entity_id: String):
 	var entity = _get_entity_by_id(entity_id)
 	if not entity:

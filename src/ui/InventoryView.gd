@@ -213,6 +213,23 @@ func _build_stats_panel(parent: VBoxContainer):
 		vigor_label.text = "MAX VIGOR: %d" % base_max_vigor
 	stats_vbox.add_child(vigor_label)
 
+	# Dodge Chance (calculated from dex and spd with equipment bonuses)
+	var base_dex = base_stats.get("dex", 0)
+	var base_spd = base_stats.get("spd", 0)
+	var total_dex = total_stats.get("dex", base_dex)
+	var total_spd = total_stats.get("spd", base_spd)
+
+	var base_dodge = (base_dex * 0.6) + (base_spd * 0.4)
+	var total_dodge = (total_dex * 0.6) + (total_spd * 0.4)
+
+	var dodge_label = Label.new()
+	if abs(total_dodge - base_dodge) > 0.01:  # Account for floating point comparison
+		dodge_label.text = "DODGE: %.1f%% → %.1f%%" % [base_dodge, total_dodge]
+		dodge_label.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7))
+	else:
+		dodge_label.text = "DODGE: %.1f%%" % base_dodge
+	stats_vbox.add_child(dodge_label)
+
 func _build_attacks_panel(parent: VBoxContainer):
 	"""Build the attacks panel with three columns: equipped, unlocked, detail"""
 	# Main horizontal container (left: equipped, middle: unlocked, right: detail)

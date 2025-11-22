@@ -97,6 +97,11 @@ func _build_panel():
 		stat_label.name = stat_name
 		stats_container.add_child(stat_label)
 
+	# Add dodge chance label
+	var dodge_label = Label.new()
+	dodge_label.name = "DODGE"
+	stats_container.add_child(dodge_label)
+
 	# RIGHT COLUMN: Effects
 	var effects_vbox = VBoxContainer.new()
 	effects_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -272,6 +277,11 @@ func _update_display():
 			var stat_label = stats_container.get_child(i)
 			if stat_label != null and entity.base_stats.has(stat_key):
 				stat_label.text = "%s: %d" % [stat_key.to_upper(), entity.base_stats[stat_key]]
+
+		# Update dodge chance (7th child in stats_container)
+		var dodge_label = stats_container.get_child(6)  # Index 6 = 7th child (after 6 stats)
+		if dodge_label != null:
+			dodge_label.text = "DODGE: %.1f%%" % entity.dodge_chance
 
 	# Update effects
 	_update_effects()
