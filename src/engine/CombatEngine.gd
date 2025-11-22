@@ -42,9 +42,16 @@ func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
 	return _perform_action_legacy(move_data, caster, target)
 
 func _perform_action(action_data: ActionData, caster_id: String, target_id: String) -> bool:
+	# Check if attack hits (only for damage-dealing actions)
+	var attack_hits = true
+	if action_data.base_damage > 0 or _has_damage_modifiers(action_data):
+		attack_hits = _check_attack_hits(action_data, target_id)
+		if not attack_hits:
+			print("CombatEngine: %s's attack missed %s!" % [caster_id, target_id])
+
 	var damage = _calculate_damage_from_action(action_data, caster_id)
 
-	if damage > 0:
+	if damage > 0 and attack_hits:
 		var target_entity = _get_entity_by_id(target_id)
 		if target_entity:
 			var new_hp = max(0, target_entity.current_hp - damage)
@@ -99,8 +106,13 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 
 	# Apply damage to hit entity if movement resulted in a hit
 	if hit_entity_id != "":
+		# Check if collision attack hits
+		var collision_hits = _check_attack_hits(action_data, hit_entity_id)
+		if not collision_hits:
+			print("CombatEngine: %s's collision attack missed %s!" % [caster_id, hit_entity_id])
+
 		var hit_damage = _calculate_damage_from_action(action_data, caster_id)
-		if hit_damage > 0:
+		if hit_damage > 0 and collision_hits:
 			var hit_target = _get_entity_by_id(hit_entity_id)
 			if hit_target:
 				var new_hp = max(0, hit_target.current_hp - hit_damage)
@@ -383,6 +395,56 @@ func _calculate_life_steal(entity_id: String, damage_dealt: int) -> int:
 			print("CombatEngine: Life steal from '%s': %d HP (%.1f%% of %d damage)" % [passive.passive_name, heal_amount, passive.life_steal_percent, damage_dealt])
 
 	return total_heal
+
+func _has_damage_modifiers(action_data: ActionData) -> bool:
+	"""
+	Check if an action has any stat modifiers that could result in damage.
+	"""
+	return (action_data.str_modifier != 0.0 or
+			action_data.dex_modifier != 0.0 or
+			action_data.int_modifier != 0.0 or
+			action_data.con_modifier != 0.0 or
+			action_data.spd_modifier != 0.0 or
+			action_data.luck_modifier != 0.0)
+
+func _calculate_dodge_chance(entity_id: String) -> float:
+	"""
+	Calculate entity's dodge chance based on dex and speed stats.
+	Formula: (dex * 0.6) + (spd * 0.4) = dodge chance percentage
+	Includes stat modifiers from equipment and effects.
+	"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return 0.0
+
+	# Get base stats
+	var dex = entity.base_stats.get("dex", 0)
+	var spd = entity.base_stats.get("spd", 0)
+
+	# Add stat modifiers from effects
+	dex += _get_total_stat_modifier(entity_id, "dex")
+	spd += _get_total_stat_modifier(entity_id, "spd")
+
+	# Calculate dodge chance: weighted formula favoring dexterity
+	var dodge_chance = (dex * 0.6) + (spd * 0.4)
+
+	return dodge_chance
+
+func _check_attack_hits(action: ActionData, target_id: String) -> bool:
+	"""
+	Determine if an attack hits or misses based on accuracy vs dodge.
+	Returns true if attack hits, false if it misses.
+	"""
+	var base_accuracy = action.accuracy
+	var dodge_chance = _calculate_dodge_chance(target_id)
+
+	# Calculate final hit chance
+	var hit_chance = base_accuracy - dodge_chance
+	hit_chance = clamp(hit_chance, 0.0, 100.0)
+
+	# Roll for hit
+	var roll = randf() * 100.0
+	return roll < hit_chance
 
 func _calculate_damage(move_data: Dictionary, caster: String) -> int:
 	var base_damage = move_data.get("base_damage", 0)

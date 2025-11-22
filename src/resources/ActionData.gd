@@ -22,3 +22,4 @@ extends Resource
 @export var applies_effect_id: String = ""
 @export var effect_duration_override: int = 0  # 0 = use effect template's base_duration
 @export var kills_user_on_use: bool = false  # If true, the user dies after using this action
+@export var accuracy: float = 100.0  # Base hit chance (0-100%). Most attacks are 100%, some may be lower
