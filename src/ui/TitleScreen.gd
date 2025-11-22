@@ -4,6 +4,7 @@ extends Control
 ## Displays game title and Start button
 
 signal start_clicked()
+signal dev_mode_clicked()
 
 func _ready():
 	# Set up full screen coverage
@@ -44,6 +45,14 @@ func _ready():
 	start_button.pressed.connect(_on_start_pressed)
 	vbox.add_child(start_button)
 
+	# Dev Mode button
+	var dev_mode_button = Button.new()
+	dev_mode_button.text = "Dev Mode"
+	dev_mode_button.custom_minimum_size = Vector2(200, 60)
+	dev_mode_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	dev_mode_button.pressed.connect(_on_dev_mode_pressed)
+	vbox.add_child(dev_mode_button)
+
 	# Add spacer to push content to center
 	var bottom_spacer = Control.new()
 	bottom_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -51,3 +60,6 @@ func _ready():
 
 func _on_start_pressed():
 	start_clicked.emit()
+
+func _on_dev_mode_pressed():
+	dev_mode_clicked.emit()

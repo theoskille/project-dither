@@ -83,8 +83,9 @@ func _show_title_screen():
 	title_screen.anchor_bottom = 1.0
 	add_child(title_screen)
 
-	# Connect to title screen signal
+	# Connect to title screen signals
 	title_screen.start_clicked.connect(_on_title_start_clicked)
+	title_screen.dev_mode_clicked.connect(_on_title_dev_mode_clicked)
 
 	view_stack.append(title_screen)
 	current_view = title_screen
@@ -130,6 +131,46 @@ func _on_class_selected(class_id: String):
 func _on_class_select_back():
 	"""Handle back button from class select screen"""
 	print("Main: Class select back clicked")
+	pop_view()
+
+func _on_title_dev_mode_clicked():
+	"""Handle Dev Mode button click from title screen"""
+	print("Main: Title screen Dev Mode clicked")
+	_show_encounter_select_screen()
+
+func _show_encounter_select_screen():
+	"""Display the encounter selection screen (dev mode)"""
+	print("Main: Showing encounter select screen")
+
+	# Push encounter select screen onto stack
+	var encounter_select_screen = Control.new()
+	encounter_select_screen.set_script(preload("res://src/ui/EncounterSelectScreen.gd"))
+	add_child(encounter_select_screen)
+
+	# Connect to encounter select signals
+	encounter_select_screen.encounter_selected.connect(_on_dev_encounter_selected)
+	encounter_select_screen.back_clicked.connect(_on_encounter_select_back)
+
+	# Hide current view
+	if current_view:
+		current_view.visible = false
+
+	view_stack.append(encounter_select_screen)
+	current_view = encounter_select_screen
+
+func _on_dev_encounter_selected(encounter_id: String):
+	"""Handle encounter selection from dev mode"""
+	print("Main: Dev mode encounter selected: %s" % encounter_id)
+
+	# Initialize player with brawler class
+	CharacterClassEngine.initialize_player_class("brawler")
+
+	# Switch directly to combat with selected encounter
+	_switch_to_combat_view(encounter_id)
+
+func _on_encounter_select_back():
+	"""Handle back button from encounter select screen"""
+	print("Main: Encounter select back clicked")
 	pop_view()
 
 func _switch_to_dungeon_view():
