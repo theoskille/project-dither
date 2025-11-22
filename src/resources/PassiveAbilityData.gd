@@ -21,4 +21,8 @@ extends Resource
 # This is applied whenever damage is dealt, not only on trigger
 @export var life_steal_percent: float = 0.0  # % of damage dealt as healing
 
+# AoE damage - dealt to adjacent entities when triggered
+@export var aoe_damage_amount: int = 0  # Damage dealt to adjacent entities
+@export var aoe_targets_allies: bool = false  # If true, damages allies too; if false, only enemies
+
 # Future: could add cooldown, chance, conditions, etc.

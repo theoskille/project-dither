@@ -364,6 +364,34 @@ func _get_distance_between_entities(entity1_id: String, entity2_id: String) -> i
 
 	return abs(entity1.position - entity2.position)
 
+func _get_adjacent_entities(entity_id: String) -> Array[String]:
+	"""
+	Get all entities adjacent to the given entity (position ± 1).
+	Returns array of entity IDs.
+	"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return []
+
+	var adjacent_ids: Array[String] = []
+	var entity_pos = entity.position
+
+	# Check player
+	var player = BattleStateStore.battle_state.player_state
+	if not player.is_dead:
+		var distance = abs(player.position - entity_pos)
+		if distance == 1:
+			adjacent_ids.append("player")
+
+	# Check all enemies
+	var enemies = BattleStateStore.battle_state.enemies
+	for i in range(enemies.size()):
+		if not enemies[i].is_dead:
+			var distance = abs(enemies[i].position - entity_pos)
+			if distance == 1:
+				adjacent_ids.append("enemy_%d" % i)
+
+	return adjacent_ids
 
 func _get_entity_by_id(entity_id: String) -> EntityState:
 	if entity_id == "player":
@@ -722,6 +750,45 @@ func _trigger_passives(entity_id: String, trigger_type: String, context_target: 
 		if passive.applies_effect_id != "":
 			_apply_effect_to_entity(entity_id, passive.applies_effect_id)
 			print("CombatEngine: Passive '%s' triggered for %s! Applied effect '%s'" % [passive.passive_name, entity_id, passive.applies_effect_id])
+
+		# Handle AoE damage to adjacent entities
+		if passive.aoe_damage_amount > 0:
+			var adjacent_entities = _get_adjacent_entities(entity_id)
+			for target_id in adjacent_entities:
+				# Filter by team if aoe_targets_allies is false
+				if not passive.aoe_targets_allies:
+					# Only damage enemies
+					var is_same_team = (entity_id == "player" and target_id == "player") or \
+									   (entity_id.begins_with("enemy_") and target_id.begins_with("enemy_"))
+					if is_same_team:
+						continue  # Skip allies
+
+				# Deal damage using full damage mechanics (triggers life steal, on-kill, etc.)
+				var target_entity = _get_entity_by_id(target_id)
+				if target_entity:
+					# Apply armor reduction to AoE damage
+					var final_damage = _apply_armor_reduction(target_id, passive.aoe_damage_amount)
+					var new_hp = max(0, target_entity.current_hp - final_damage)
+					BattleStateMutations.set_entity_hp(target_id, new_hp)
+					print("CombatEngine: Passive '%s' dealt %d AoE damage to %s" % [passive.passive_name, final_damage, target_id])
+
+					# Apply life steal from AoE damage
+					var heal_amount = _calculate_life_steal(entity_id, passive.aoe_damage_amount)
+					if heal_amount > 0:
+						BattleStateMutations.heal_entity(entity_id, heal_amount)
+
+					# Check for death and trigger on_kill passives
+					if new_hp == 0:
+						_trigger_passives(entity_id, "on_kill", target_id)
+
+						# Mark entity as dead
+						BattleStateMutations.set_entity_dead(target_id, true)
+
+						# Track enemy defeats (only count enemies, not the player)
+						if target_id != "player":
+							DungeonStateMutations.increment_enemies_defeated()
+
+						_check_victory()
 
 # Check if all enemies are defeated
 func _check_victory():

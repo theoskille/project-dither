@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PassiveAbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/PassiveAbilityData.gd" id="1_molten_aura"]
+
+[resource]
+script = ExtResource("1_molten_aura")
+passive_id = "molten_aura"
+passive_name = "Molten Aura"
+description = "At the end of each turn, searing heat radiates outward, dealing 4 damage to all adjacent units - friend and foe alike."
+trigger_type = "on_turn_end"
+vigor_restore = 0
+heal_amount = 0
+applies_effect_id = ""
+life_steal_percent = 0.0
+aoe_damage_amount = 4
+aoe_targets_allies = true
