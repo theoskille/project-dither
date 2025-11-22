@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3 uid="uid://spider_enemy"]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_spider"]
+
+[resource]
+script = ExtResource("1_spider")
+enemy_id = "spider"
+enemy_name = "Spider"
+max_hp = 90
+max_vigor = 3
+base_stats = {
+"str": 8,
+"dex": 12,
+"int": 6,
+"con": 9,
+"spd": 11,
+"luck": 8
+}
+equipped_attacks = ["poison_fang"]
+passive_abilities = []
+sprite_path = ""
+xp_reward = 45
