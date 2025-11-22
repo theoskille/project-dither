@@ -10,6 +10,10 @@ signal xp_gained(amount: int, new_total: int)
 signal level_up(new_level: int)
 signal skill_unlocked(skill_id: String)
 signal character_class_changed(new_class_id: String)
+signal item_equipped(slot: String, item_id: String)
+signal item_unequipped(slot: String, item_id: String)
+signal item_added(item_id: String)
+signal item_removed(item_id: String)
 
 # Player persistent data
 var selected_character_class: String = ""
@@ -36,8 +40,19 @@ var equipped_attacks: Array[String] = []
 
 var passive_abilities: Array[String] = []
 
+# Inventory and equipment system
+var inventory: Array[String] = []  # Unequipped item IDs
+var equipped_weapon: String = ""  # Single weapon slot
+var equipped_armor: String = ""  # Single armor slot
+var equipped_accessories: Array[String] = []  # Max 3 accessory slots
+
 func _ready():
-	pass  # Player data initialized with default values
+	# Player data initialized with default values
+
+	# Add starter items to inventory for testing
+	if inventory.size() == 0:
+		inventory = ["iron_sword", "leather_armor", "swift_ring", "ruby_amulet", "scholar_glasses"]
+		print("PlayerStore: Initialized with starter items: %s" % inventory)
 
 ## Calculate max vigor based on player level
 ## Formula: 2 base vigor + 1 every 5 levels

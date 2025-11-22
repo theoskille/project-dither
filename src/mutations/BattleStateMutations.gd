@@ -227,14 +227,24 @@ func sync_player_from_store():
 	player.passive_abilities = PlayerStore.passive_abilities.duplicate()
 	BattleStateStore._emit_change("player_state.passive_abilities", old_passives, player.passive_abilities)
 
-	# Sync base stats from PlayerStore
+	# Calculate total stats including equipment bonuses from ItemEngine
+	var total_stats = ItemEngine.calculate_total_stats()
+
+	# Sync stats to battle state (these now include equipment bonuses)
 	var old_stats = player.base_stats
-	player.base_stats = PlayerStore.base_stats.duplicate()
+	player.base_stats = {
+		"str": total_stats.get("str", 10),
+		"dex": total_stats.get("dex", 10),
+		"int": total_stats.get("int", 10),
+		"con": total_stats.get("con", 10),
+		"spd": total_stats.get("spd", 10),
+		"luck": total_stats.get("luck", 10)
+	}
 	BattleStateStore._emit_change("player_state.base_stats", old_stats, player.base_stats)
 
-	# Calculate max HP based on constitution (CON * 5 + base 100)
+	# Set max HP from total stats (includes equipment bonuses)
 	var old_max_hp = player.max_hp
-	var new_max_hp = 100 + (PlayerStore.base_stats.get("con", 10) * 5)
+	var new_max_hp = total_stats.get("max_hp", 100 + (PlayerStore.base_stats.get("con", 10) * 5))
 	player.max_hp = new_max_hp
 	BattleStateStore._emit_change("player_state.max_hp", old_max_hp, new_max_hp)
 
@@ -244,12 +254,13 @@ func sync_player_from_store():
 	player.current_hp = min(restored_hp, new_max_hp)  # Cap at max HP in case it changed
 	BattleStateStore._emit_change("player_state.current_hp", old_current_hp, player.current_hp)
 
-	# Calculate max vigor based on player level (2 base + 1 every 5 levels)
-	var calculated_max_vigor = PlayerStore.get_max_vigor_for_level()
+	# Set max vigor from total stats (includes equipment bonuses)
+	var calculated_max_vigor = total_stats.get("max_vigor", PlayerStore.get_max_vigor_for_level())
 	player.max_vigor = calculated_max_vigor
 	player.current_vigor = calculated_max_vigor
 
-	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Stats: %s, MaxHP: %d" % [player.equipped_attacks, player.base_stats, player.max_hp])
+	var equipment_bonuses = ItemEngine.get_equipped_stat_bonuses()
+	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Base Stats: %s, Equipment Bonuses: %s, Final Stats: %s, MaxHP: %d, MaxVigor: %d" % [player.equipped_attacks, PlayerStore.base_stats, equipment_bonuses, player.base_stats, player.max_hp, player.max_vigor])
 
 func save_player_hp_to_store():
 	"""Save the current player HP from battle state back to persistent PlayerStore"""
