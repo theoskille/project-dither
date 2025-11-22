@@ -25,6 +25,9 @@ extends Resource
 # Armor modifier
 @export var armor_modifier: int = 0
 
+# Dodge modifier (flat percentage boost, e.g., 15 = +15% dodge chance)
+@export var dodge_modifier: int = 0
+
 # Damage over time
 @export var base_damage_per_turn: int = 0
 

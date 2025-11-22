@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EffectData" load_steps=2 format=3 uid="uid://cnimble7890xyz"]
+
+[ext_resource type="Script" path="res://src/resources/EffectData.gd" id="1_nimble"]
+
+[resource]
+script = ExtResource("1_nimble")
+effect_id = "nimble"
+effect_name = "Nimble"
+description = "Increases dodge chance by 15% for 3 turns"
+base_duration = 3
+str_modifier = 0
+dex_modifier = 0
+int_modifier = 0
+con_modifier = 0
+spd_modifier = 0
+luck_modifier = 0
+percent_str_modifier = 0
+percent_dex_modifier = 0
+percent_int_modifier = 0
+percent_con_modifier = 0
+percent_spd_modifier = 0
+percent_luck_modifier = 0
+armor_modifier = 0
+dodge_modifier = 15
+base_damage_per_turn = 0
+blocks_all_actions = false
+blocks_action_types = []

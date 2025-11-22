@@ -493,8 +493,8 @@ func _has_damage_modifiers(action_data: ActionData) -> bool:
 func _calculate_dodge_chance(entity_id: String) -> float:
 	"""
 	Calculate entity's dodge chance based on dex and speed stats.
-	Formula: (dex * 0.6) + (spd * 0.4) = dodge chance percentage
-	Includes stat modifiers from equipment and effects.
+	Formula: (dex * 0.6) + (spd * 0.4) + dodge_modifiers = dodge chance percentage
+	Includes stat modifiers from equipment and effects, plus direct dodge modifiers.
 	"""
 	var entity = _get_entity_by_id(entity_id)
 	if not entity:
@@ -510,6 +510,10 @@ func _calculate_dodge_chance(entity_id: String) -> float:
 
 	# Calculate dodge chance: weighted formula favoring dexterity
 	var dodge_chance = (dex * 0.6) + (spd * 0.4)
+
+	# Add direct dodge modifiers from effects
+	var dodge_modifier = _get_total_dodge_modifier(entity_id)
+	dodge_chance += dodge_modifier
 
 	return dodge_chance
 
@@ -574,6 +578,22 @@ func _get_total_armor_modifier(entity_id: String) -> int:
 
 	return armor_modifier
 
+func _get_total_dodge_modifier(entity_id: String) -> int:
+	"""
+	Calculate total dodge chance modifier from all active effects.
+	Returns the sum of all dodge_modifier values from effects.
+	"""
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return 0
+
+	var dodge_modifier = 0
+
+	for effect in entity.active_effects:
+		dodge_modifier += effect.dodge_modifier
+
+	return dodge_modifier
+
 func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_override: int = 0):
 	var effect_template = EffectDatabase.get_effect(effect_id)
 	if effect_template == null:
@@ -612,6 +632,7 @@ func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_over
 	effect.percent_spd_modifier = effect_template.percent_spd_modifier
 	effect.percent_luck_modifier = effect_template.percent_luck_modifier
 	effect.armor_modifier = effect_template.armor_modifier
+	effect.dodge_modifier = effect_template.dodge_modifier
 	effect.damage_per_turn = effect_template.base_damage_per_turn
 	effect.blocks_all_actions = effect_template.blocks_all_actions
 	effect.blocks_action_types = effect_template.blocks_action_types.duplicate()
@@ -619,9 +640,10 @@ func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_over
 	BattleStateMutations.add_effect_to_entity(entity_id, effect)
 	print("CombatEngine: Applied effect '%s' to %s (duration: %d)" % [effect_id, entity_id, effect.remaining_duration])
 
-	# Update dodge chance if effect modifies dex or spd
+	# Update dodge chance if effect modifies dex, spd, or dodge directly
 	if (effect.dex_modifier != 0 or effect.spd_modifier != 0 or
-		effect.percent_dex_modifier != 0 or effect.percent_spd_modifier != 0):
+		effect.percent_dex_modifier != 0 or effect.percent_spd_modifier != 0 or
+		effect.dodge_modifier != 0):
 		_update_entity_dodge_chance(entity_id)
 
 func _process_damage_over_time():
@@ -656,12 +678,13 @@ func _decrement_effect_durations():
 				var expired_effect = entity.active_effects[i]
 				# Check if removing this effect affects dodge
 				if (expired_effect.dex_modifier != 0 or expired_effect.spd_modifier != 0 or
-					expired_effect.percent_dex_modifier != 0 or expired_effect.percent_spd_modifier != 0):
+					expired_effect.percent_dex_modifier != 0 or expired_effect.percent_spd_modifier != 0 or
+					expired_effect.dodge_modifier != 0):
 					dodge_needs_update = true
 
 				BattleStateMutations.remove_effect_from_entity(entity_id, i)
 
-		# Update dodge if any dex/spd effects expired
+		# Update dodge if any dex/spd/dodge effects expired
 		if dodge_needs_update:
 			_update_entity_dodge_chance(entity_id)
 
