@@ -6,7 +6,7 @@
 script = ExtResource("1_sentinel")
 passive_id = "sentinel"
 passive_name = "Sentinel"
-description = "Enemies cannot move past this character. Blocks all forward movement abilities."
+description = "Enemies cannot move past this character in either direction. They can move to adjacent squares but cannot cross over."
 trigger_type = ""
 vigor_restore = 0
 heal_amount = 0

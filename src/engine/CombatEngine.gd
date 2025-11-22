@@ -71,58 +71,56 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1
 
-	# Track collision entity for damage application
-	var collision_entity_id = ""
+	# Track hit entity for damage application
+	var hit_entity_id = ""
 
 	# Move caster if specified
 	if action_data.move_caster != 0:
 		var caster_entity = _get_entity_by_id(caster_id)
 		if caster_entity:
-			var new_pos = 0
+			# Use MovementEngine to resolve movement
+			var movement_result = MovementEngine.resolve_movement(
+				caster_id,
+				action_data.movement_type,
+				caster_entity.position,
+				action_data.move_caster,
+				max_position
+			)
 
-			# Check for collision-based movement
-			if action_data.stop_on_collision:
-				collision_entity_id = _find_collision_entity(caster_id, caster_entity.position, action_data.move_caster)
-
-				if collision_entity_id != "":
-					# Collision detected - move to collision entity's position
-					var collision_entity = _get_entity_by_id(collision_entity_id)
-					new_pos = collision_entity.position
-					print("CombatEngine: %s dashed and collided with %s at position %d" % [caster_id, collision_entity_id, new_pos])
-				else:
-					# No collision - move full distance (clamped to boundaries)
-					new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
-					print("CombatEngine: %s dashed full distance to position %d (no collision)" % [caster_id, new_pos])
-			else:
-				# Normal movement without collision detection
-				new_pos = clamp(caster_entity.position + action_data.move_caster, 0, max_position)
+			var new_pos = movement_result.final_position
+			hit_entity_id = movement_result.hit_entity
 
 			BattleStateMutations.set_entity_position(caster_id, new_pos)
 
-	# Apply collision damage if a collision occurred
-	if collision_entity_id != "":
-		var collision_damage = _calculate_damage_from_action(action_data, caster_id)
-		if collision_damage > 0:
-			var collision_target = _get_entity_by_id(collision_entity_id)
-			if collision_target:
-				var new_hp = max(0, collision_target.current_hp - collision_damage)
-				BattleStateMutations.set_entity_hp(collision_entity_id, new_hp)
-				print("CombatEngine: Collision damage applied to %s: %d damage" % [collision_entity_id, collision_damage])
+			if hit_entity_id != "":
+				print("CombatEngine: %s moved to position %d and hit %s" % [caster_id, new_pos, hit_entity_id])
+			else:
+				print("CombatEngine: %s moved to position %d" % [caster_id, new_pos])
 
-				# Apply life steal from collision damage
-				var heal_amount = _calculate_life_steal(caster_id, collision_damage)
+	# Apply damage to hit entity if movement resulted in a hit
+	if hit_entity_id != "":
+		var hit_damage = _calculate_damage_from_action(action_data, caster_id)
+		if hit_damage > 0:
+			var hit_target = _get_entity_by_id(hit_entity_id)
+			if hit_target:
+				var new_hp = max(0, hit_target.current_hp - hit_damage)
+				BattleStateMutations.set_entity_hp(hit_entity_id, new_hp)
+				print("CombatEngine: Hit damage applied to %s: %d damage" % [hit_entity_id, hit_damage])
+
+				# Apply life steal from hit damage
+				var heal_amount = _calculate_life_steal(caster_id, hit_damage)
 				if heal_amount > 0:
 					BattleStateMutations.heal_entity(caster_id, heal_amount)
 
-				# Check for death from collision damage
+				# Check for death from hit damage
 				if new_hp == 0:
-					_trigger_passives(caster_id, "on_kill", collision_entity_id)
+					_trigger_passives(caster_id, "on_kill", hit_entity_id)
 
 					# Mark entity as dead
-					BattleStateMutations.set_entity_dead(collision_entity_id, true)
+					BattleStateMutations.set_entity_dead(hit_entity_id, true)
 
 					# Track enemy defeats (only count enemies, not the player)
-					if collision_entity_id != "player":
+					if hit_entity_id != "player":
 						DungeonStateMutations.increment_enemies_defeated()
 
 					_check_victory()
@@ -229,10 +227,10 @@ func can_execute_action(action_data: ActionData, caster_id: String, target_id: S
 	if distance < action_data.min_range or distance > action_data.max_range:
 		return false
 
-	# Check if movement is blocked by sentinel
+	# Check if caster movement is blocked
 	if action_data.move_caster != 0:
-		if _is_movement_blocked_by_sentinel(caster_id, caster_entity.position, action_data.move_caster):
-			print("CombatEngine: %s cannot move - blocked by sentinel" % caster_id)
+		if not MovementEngine.validate_movement(caster_id, action_data.movement_type, caster_entity.position, action_data.move_caster):
+			print("CombatEngine: %s cannot move - blocked" % caster_id)
 			return false
 
 	return true
@@ -318,92 +316,6 @@ func _get_distance_between_entities(entity1_id: String, entity2_id: String) -> i
 
 	return abs(entity1.position - entity2.position)
 
-func _find_collision_entity(caster_id: String, start_position: int, movement: int) -> String:
-	"""
-	Finds the nearest entity in the movement path during a dash.
-	Returns the entity_id of the first enemy encountered, or empty string if no collision.
-	"""
-	if movement == 0:
-		return ""
-
-	var direction = sign(movement)
-	var distance = abs(movement)
-
-	# Get all entities to check for collisions
-	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
-	var nearest_entity = ""
-	var nearest_distance = distance + 1  # Start beyond max dash distance
-
-	# Check each tile in the dash path (including current position)
-	for i in range(0, distance + 1):
-		var check_position = start_position + (direction * i)
-
-		# Check if any entity is at this position
-		for entity_id in turn_order:
-			if entity_id == caster_id:
-				continue  # Skip the caster
-
-			var entity = _get_entity_by_id(entity_id)
-			if entity and not entity.is_dead and entity.position == check_position:
-				# Found an entity closer than previous finds
-				if i < nearest_distance:
-					nearest_entity = entity_id
-					nearest_distance = i
-					return nearest_entity  # Return immediately (stop at first collision)
-
-	return nearest_entity
-
-func _is_movement_blocked_by_sentinel(mover_id: String, start_position: int, movement: int) -> bool:
-	"""
-	Checks if movement would pass an enemy with the "sentinel" passive ability.
-	Only blocks forward movement past the sentinel - backward movement is allowed.
-	Returns true if blocked, false if movement is allowed.
-	"""
-	if movement == 0:
-		return false
-
-	var direction = sign(movement)
-	var distance = abs(movement)
-	var end_position = start_position + movement
-
-	# Determine if this is forward movement (toward back positions)
-	# Assuming higher positions = back of battlefield
-	var is_forward = direction > 0
-
-	# Only check for sentinel if moving forward
-	if not is_forward:
-		return false
-
-	# Get all entities to check for sentinel
-	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")
-
-	# Check each position in the movement path (excluding start position)
-	for i in range(1, distance + 1):
-		var check_position = start_position + (direction * i)
-
-		# Check if any entity at this position has sentinel passive
-		for entity_id in turn_order:
-			if entity_id == mover_id:
-				continue  # Skip the moving entity
-
-			var entity = _get_entity_by_id(entity_id)
-			if not entity or entity.is_dead:
-				continue
-
-			# Check if entity is at the position we're trying to pass
-			if entity.position == check_position:
-				# Check if this entity has sentinel passive
-				if "sentinel" in entity.passive_abilities:
-					print("CombatEngine: Movement blocked by sentinel at position %d (entity: %s)" % [check_position, entity_id])
-					return true
-
-			# Also block if trying to move past a sentinel (sentinel is between start and end)
-			if entity.position > start_position and entity.position <= end_position:
-				if "sentinel" in entity.passive_abilities:
-					print("CombatEngine: Movement blocked - would pass sentinel at position %d (entity: %s)" % [entity.position, entity_id])
-					return true
-
-	return false
 
 func _get_entity_by_id(entity_id: String) -> EntityState:
 	if entity_id == "player":
