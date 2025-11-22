@@ -416,12 +416,14 @@ func _apply_armor_reduction(target_id: String, raw_damage: int) -> int:
 	if not target:
 		return raw_damage
 
-	var armor_percent = target.armor
+	var base_armor = target.armor
+	var armor_modifier = _get_total_armor_modifier(target_id)
+	var armor_percent = base_armor + armor_modifier
 	var damage_multiplier = 1.0 - (armor_percent / 100.0)
 	var final_damage = int(raw_damage * damage_multiplier)
 
-	if armor_percent > 0:
-		print("CombatEngine: Armor reduced %d damage to %d (%.1f%% armor)" % [raw_damage, final_damage, armor_percent])
+	if armor_percent > 0 or armor_modifier != 0:
+		print("CombatEngine: Armor reduced %d damage to %d (%.1f%% armor, %d modifier)" % [raw_damage, final_damage, armor_percent, armor_modifier])
 
 	return max(0, final_damage)
 
@@ -508,6 +510,18 @@ func _get_total_stat_modifier(entity_id: String, stat: String) -> int:
 	var modified_stat = (base_stat + flat_modifier) * (1.0 + percent_modifier / 100.0)
 	return int(modified_stat) - base_stat
 
+func _get_total_armor_modifier(entity_id: String) -> int:
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return 0
+
+	var armor_modifier = 0
+
+	for effect in entity.active_effects:
+		armor_modifier += effect.armor_modifier
+
+	return armor_modifier
+
 func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_override: int = 0):
 	var effect_template = EffectDatabase.get_effect(effect_id)
 	if effect_template == null:
@@ -545,6 +559,7 @@ func _apply_effect_to_entity(entity_id: String, effect_id: String, duration_over
 	effect.percent_con_modifier = effect_template.percent_con_modifier
 	effect.percent_spd_modifier = effect_template.percent_spd_modifier
 	effect.percent_luck_modifier = effect_template.percent_luck_modifier
+	effect.armor_modifier = effect_template.armor_modifier
 	effect.damage_per_turn = effect_template.base_damage_per_turn
 	effect.blocks_all_actions = effect_template.blocks_all_actions
 	effect.blocks_action_types = effect_template.blocks_action_types.duplicate()

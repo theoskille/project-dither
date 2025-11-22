@@ -20,6 +20,9 @@ extends Resource
 @export var percent_spd_modifier: int = 0
 @export var percent_luck_modifier: int = 0
 
+# Armor modifier
+@export var armor_modifier: int = 0
+
 # Damage over time
 @export var damage_per_turn: int = 0
 

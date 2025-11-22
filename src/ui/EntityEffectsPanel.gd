@@ -95,6 +95,12 @@ func _format_effect_details(effect: EffectState) -> String:
 	if effect.damage_per_turn > 0:
 		parts.append("-%d HP/turn" % effect.damage_per_turn)
 
+	# Armor modifier
+	if effect.armor_modifier > 0:
+		parts.append("+%d%% Armor" % effect.armor_modifier)
+	elif effect.armor_modifier < 0:
+		parts.append("%d%% Armor" % effect.armor_modifier)
+
 	# Stat modifiers (flat and percent)
 	var stat_keys = ["str", "dex", "int", "con", "spd", "luck"]
 	for stat in stat_keys:
