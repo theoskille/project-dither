@@ -42,6 +42,14 @@ func execute_move(action_data: ActionData, caster: String, target: String) -> bo
 	if action_data.cooldown > 0:
 		BattleStateMutations.set_action_cooldown(caster, action_data.action_id, action_data.cooldown)
 
+	# Apply self-damage if the action damages the caster
+	if action_data.damage_caster > 0:
+		var caster_entity = _get_entity_by_id(caster)
+		if caster_entity:
+			var new_hp = max(0, caster_entity.current_hp - action_data.damage_caster)
+			BattleStateMutations.set_entity_hp(caster, new_hp)
+			print("CombatEngine: %s took %d self-damage from using %s" % [caster, action_data.damage_caster, action_data.action_name])
+
 	return _perform_action(action_data, caster, target)
 
 func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
