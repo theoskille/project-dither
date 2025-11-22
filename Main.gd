@@ -20,17 +20,13 @@ func _ready():
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 
-	# Initialize player class (for now, hardcoded to Brawler)
-	CharacterClassEngine.initialize_player_class("brawler")
-
 	# Connect to engine signals
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
 	DungeonEngine.boss_defeated.connect(_on_boss_defeated)
 	CombatEngine.victory_achieved.connect(_on_victory_achieved)
 
-	# Start in dungeon mode
-	DungeonEngine.start_dungeon()
-	_switch_to_dungeon_view()
+	# Start with title screen
+	_show_title_screen()
 
 func push_view(view_script: GDScript):
 	"""Push a new view onto the stack and display it"""
@@ -69,6 +65,72 @@ func pop_view():
 	# Show previous view
 	current_view = view_stack[-1]
 	current_view.visible = true
+
+func _show_title_screen():
+	"""Display the title screen as the first view"""
+	print("Main: Showing title screen")
+
+	# Clear view stack
+	for view in view_stack:
+		remove_child(view)
+		view.queue_free()
+	view_stack.clear()
+
+	# Create title screen
+	var title_screen = Control.new()
+	title_screen.set_script(preload("res://src/ui/TitleScreen.gd"))
+	title_screen.anchor_right = 1.0
+	title_screen.anchor_bottom = 1.0
+	add_child(title_screen)
+
+	# Connect to title screen signal
+	title_screen.start_clicked.connect(_on_title_start_clicked)
+
+	view_stack.append(title_screen)
+	current_view = title_screen
+
+func _show_class_select_screen():
+	"""Display the class selection screen"""
+	print("Main: Showing class select screen")
+
+	# Push class select screen onto stack
+	var class_select_screen = Control.new()
+	class_select_screen.set_script(preload("res://src/ui/ClassSelectScreen.gd"))
+	add_child(class_select_screen)
+
+	# Connect to class select signals
+	class_select_screen.class_selected.connect(_on_class_selected)
+	class_select_screen.back_clicked.connect(_on_class_select_back)
+
+	# Hide current view
+	if current_view:
+		current_view.visible = false
+
+	view_stack.append(class_select_screen)
+	current_view = class_select_screen
+
+func _on_title_start_clicked():
+	"""Handle Start button click from title screen"""
+	print("Main: Title screen Start clicked")
+	_show_class_select_screen()
+
+func _on_class_selected(class_id: String):
+	"""Handle class selection and start the game"""
+	print("Main: Class selected: %s" % class_id)
+
+	# Initialize player with selected class
+	CharacterClassEngine.initialize_player_class(class_id)
+
+	# Start dungeon
+	DungeonEngine.start_dungeon()
+
+	# Switch to dungeon view (clears stack)
+	_switch_to_dungeon_view()
+
+func _on_class_select_back():
+	"""Handle back button from class select screen"""
+	print("Main: Class select back clicked")
+	pop_view()
 
 func _switch_to_dungeon_view():
 	print("Main: Switching to dungeon view")
