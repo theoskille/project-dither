@@ -39,6 +39,12 @@ var passive_abilities: Array[String] = []
 func _ready():
 	pass  # Player data initialized with default values
 
+## Calculate max vigor based on player level
+## Formula: 2 base vigor + 1 every 5 levels
+## Level 1-4: 2 vigor, Level 5-9: 3 vigor, Level 10-14: 4 vigor, etc.
+func get_max_vigor_for_level() -> int:
+	return 2 + int(floor(level / 5.0))
+
 func get_state_value(property_path: String):
 	return _get_nested_property(self, property_path)
 

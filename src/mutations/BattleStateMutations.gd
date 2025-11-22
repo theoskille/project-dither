@@ -244,9 +244,10 @@ func sync_player_from_store():
 	player.current_hp = min(restored_hp, new_max_hp)  # Cap at max HP in case it changed
 	BattleStateStore._emit_change("player_state.current_hp", old_current_hp, player.current_hp)
 
-	# Max vigor stays at 3 for now (could be stat-based in future)
-	player.max_vigor = 3
-	player.current_vigor = 3
+	# Calculate max vigor based on player level (2 base + 1 every 5 levels)
+	var calculated_max_vigor = PlayerStore.get_max_vigor_for_level()
+	player.max_vigor = calculated_max_vigor
+	player.current_vigor = calculated_max_vigor
 
 	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Stats: %s, MaxHP: %d" % [player.equipped_attacks, player.base_stats, player.max_hp])
 

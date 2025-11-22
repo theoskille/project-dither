@@ -16,6 +16,12 @@ func level_up():
 	# Increase level
 	var old_level = PlayerStore.level
 	var new_level = old_level + 1
+
+	# Check if max vigor should increase (happens every 5 levels)
+	var old_max_vigor = 2 + int(floor(old_level / 5.0))
+	var new_max_vigor = 2 + int(floor(new_level / 5.0))
+	var vigor_increased = new_max_vigor > old_max_vigor
+
 	PlayerStore.level = new_level
 	PlayerStore._emit_change("level", old_level, new_level)
 
@@ -38,7 +44,11 @@ func level_up():
 	PlayerStore._emit_change("current_xp", old_xp, 0)
 
 	PlayerStore.level_up.emit(new_level)
-	print("PlayerMutations: Level up! Now level %d. Stats increased: %s -> %s. Skill points: %d" % [new_level, old_stats, PlayerStore.base_stats, new_points])
+
+	var level_up_msg = "PlayerMutations: Level up! Now level %d. Stats increased: %s -> %s. Skill points: %d" % [new_level, old_stats, PlayerStore.base_stats, new_points]
+	if vigor_increased:
+		level_up_msg += ". Max vigor increased: %d -> %d" % [old_max_vigor, new_max_vigor]
+	print(level_up_msg)
 
 func award_skill_point():
 	"""Award one skill point to the player"""
