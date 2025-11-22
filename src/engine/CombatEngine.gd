@@ -233,6 +233,10 @@ func process_turn_end():
 	_decrement_effect_durations()
 	BattleStateMutations.set_turn_phase("turn_end")
 
+	# Trigger end-of-turn passive abilities (e.g., self-repair) for current entity
+	var current_entity_id = _get_current_turn_entity()
+	_trigger_passives(current_entity_id, "on_turn_end")
+
 	# Check if we're at the end of a round (about to loop back to turn index 0)
 	var current_index = BattleStateStore.get_state_value("turn_state.current_turn_index")
 	var turn_order = BattleStateStore.get_state_value("turn_state.turn_order")

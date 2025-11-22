@@ -6,8 +6,11 @@ extends Resource
 @export_multiline var description: String = ""
 
 # Trigger type determines when this passive activates
-# Supported: "on_kill" (when entity kills an enemy)
-@export var trigger_type: String = "on_kill"
+# Supported trigger types:
+#   "" (empty string) - Always active (e.g., life steal)
+#   "on_kill" - When entity kills an enemy
+#   "on_turn_end" - At the end of entity's turn
+@export var trigger_type: String = ""
 
 # Effects when triggered
 @export var vigor_restore: int = 0  # Amount of vigor to restore
