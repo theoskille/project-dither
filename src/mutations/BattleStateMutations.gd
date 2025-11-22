@@ -121,6 +121,16 @@ func set_entity_dodge_chance(entity_id: String, new_dodge: float):
 	entity.dodge_chance = new_dodge
 	BattleStateStore._emit_change(property_path, old_dodge, new_dodge)
 
+func set_entity_armor(entity_id: String, new_armor: float):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var property_path = _get_entity_property_path(entity_id, "armor")
+	var old_armor = entity.armor
+	entity.armor = new_armor
+	BattleStateStore._emit_change(property_path, old_armor, new_armor)
+
 func decrement_effect_durations(entity_id: String):
 	var entity = _get_entity_by_id(entity_id)
 	if not entity:
@@ -152,6 +162,7 @@ func add_enemy_to_battle(enemy_data: EnemyData, position: int):
 	entity_state.equipped_attacks = enemy_data.equipped_attacks.duplicate()
 	entity_state.passive_abilities = enemy_data.passive_abilities.duplicate()
 	entity_state.position = position
+	entity_state.armor = 0.0  # Initialize armor to 0
 
 	# Use properly typed array
 	var empty_effects: Array[EffectState] = []
@@ -211,6 +222,7 @@ func reset_player():
 	player.current_hp = player.max_hp
 	player.current_vigor = player.max_vigor
 	player.position = 0
+	player.armor = 0.0  # Reset armor to 0
 
 	# Use properly typed array for active_effects
 	var empty_effects: Array[EffectState] = []
@@ -219,6 +231,7 @@ func reset_player():
 	BattleStateStore._emit_change("player_state.current_hp", null, player.max_hp)
 	BattleStateStore._emit_change("player_state.current_vigor", null, player.max_vigor)
 	BattleStateStore._emit_change("player_state.position", null, 0)
+	BattleStateStore._emit_change("player_state.armor", null, 0.0)
 	BattleStateStore._emit_change("player_state.active_effects", null, empty_effects)
 	print("BattleStateMutations: Reset player to defaults")
 
@@ -268,6 +281,11 @@ func sync_player_from_store():
 	var calculated_max_vigor = total_stats.get("max_vigor", PlayerStore.get_max_vigor_for_level())
 	player.max_vigor = calculated_max_vigor
 	player.current_vigor = calculated_max_vigor
+
+	# Initialize armor to 0 (can be modified later by effects/items)
+	var old_armor = player.armor
+	player.armor = 0.0
+	BattleStateStore._emit_change("player_state.armor", old_armor, 0.0)
 
 	var equipment_bonuses = ItemEngine.get_equipped_stat_bonuses()
 	print("BattleStateMutations: Synced player from PlayerStore - Attacks: %s, Base Stats: %s, Equipment Bonuses: %s, Final Stats: %s, MaxHP: %d, MaxVigor: %d" % [player.equipped_attacks, PlayerStore.base_stats, equipment_bonuses, player.base_stats, player.max_hp, player.max_vigor])

@@ -60,7 +60,9 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	if damage > 0 and attack_hits:
 		var target_entity = _get_entity_by_id(target_id)
 		if target_entity:
-			var new_hp = max(0, target_entity.current_hp - damage)
+			# Apply armor reduction to damage
+			var final_damage = _apply_armor_reduction(target_id, damage)
+			var new_hp = max(0, target_entity.current_hp - final_damage)
 			BattleStateMutations.set_entity_hp(target_id, new_hp)
 
 			# Apply life steal from passives
@@ -121,9 +123,11 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 		if hit_damage > 0 and collision_hits:
 			var hit_target = _get_entity_by_id(hit_entity_id)
 			if hit_target:
-				var new_hp = max(0, hit_target.current_hp - hit_damage)
+				# Apply armor reduction to collision damage
+				var final_hit_damage = _apply_armor_reduction(hit_entity_id, hit_damage)
+				var new_hp = max(0, hit_target.current_hp - final_hit_damage)
 				BattleStateMutations.set_entity_hp(hit_entity_id, new_hp)
-				print("CombatEngine: Hit damage applied to %s: %d damage" % [hit_entity_id, hit_damage])
+				print("CombatEngine: Hit damage applied to %s: %d damage" % [hit_entity_id, final_hit_damage])
 
 				# Apply life steal from hit damage
 				var heal_amount = _calculate_life_steal(caster_id, hit_damage)
@@ -402,6 +406,25 @@ func _calculate_life_steal(entity_id: String, damage_dealt: int) -> int:
 
 	return total_heal
 
+func _apply_armor_reduction(target_id: String, raw_damage: int) -> int:
+	"""
+	Apply armor reduction to damage.
+	Armor reduces damage by a percentage (e.g., 25 armor = 25% reduction).
+	Formula: final_damage = raw_damage * (1 - (armor / 100))
+	"""
+	var target = _get_entity_by_id(target_id)
+	if not target:
+		return raw_damage
+
+	var armor_percent = target.armor
+	var damage_multiplier = 1.0 - (armor_percent / 100.0)
+	var final_damage = int(raw_damage * damage_multiplier)
+
+	if armor_percent > 0:
+		print("CombatEngine: Armor reduced %d damage to %d (%.1f%% armor)" % [raw_damage, final_damage, armor_percent])
+
+	return max(0, final_damage)
+
 func _has_damage_modifiers(action_data: ActionData) -> bool:
 	"""
 	Check if an action has any stat modifiers that could result in damage.
@@ -546,6 +569,7 @@ func _process_damage_over_time():
 			total_dot_damage += effect.damage_per_turn
 
 		if total_dot_damage > 0:
+			# DoT bypasses armor - apply damage directly
 			BattleStateMutations.set_entity_hp(entity_id, max(0, entity.current_hp - total_dot_damage))
 
 func _decrement_effect_durations():
