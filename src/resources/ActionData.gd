@@ -24,3 +24,9 @@ extends Resource
 @export var effect_duration_override: int = 0  # 0 = use effect template's base_duration
 @export var kills_user_on_use: bool = false  # If true, the user dies after using this action
 @export var accuracy: float = 100.0  # Base hit chance (0-100%). Most attacks are 100%, some may be lower
+@export var base_heal_target: int = 0  # Flat heal amount applied to the target
+@export var base_heal_self: int = 0  # Flat heal amount applied to the caster
+@export var int_heal_modifier: float = 0.0  # INT scaling for healing
+@export var con_heal_modifier: float = 0.0  # CON scaling for healing
+@export var spd_heal_modifier: float = 0.0  # SPD scaling for healing
+@export var luck_heal_modifier: float = 0.0  # LUCK scaling for healing

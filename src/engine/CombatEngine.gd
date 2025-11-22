@@ -78,6 +78,13 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			if heal_amount > 0:
 				BattleStateMutations.heal_entity(caster_id, heal_amount)
 
+			# Apply target healing if action has heal_target property
+			if action_data.base_heal_target > 0:
+				var target_heal = _calculate_heal_from_action(action_data, caster_id, "target")
+				if target_heal > 0:
+					BattleStateMutations.heal_entity(target_id, target_heal)
+					print("CombatEngine: %s healed %s for %d HP" % [caster_id, target_id, target_heal])
+
 			# Check for death and trigger on_kill passives
 			if new_hp == 0:
 				_trigger_passives(caster_id, "on_kill", target_id)
@@ -170,6 +177,13 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 
 	if action_data.applies_effect_id != "":
 		_apply_effect_to_entity(target_id, action_data.applies_effect_id, action_data.effect_duration_override)
+
+	# Apply self-healing if action has heal_self property
+	if action_data.base_heal_self > 0:
+		var self_heal = _calculate_heal_from_action(action_data, caster_id, "self")
+		if self_heal > 0:
+			BattleStateMutations.heal_entity(caster_id, self_heal)
+			print("CombatEngine: %s healed self for %d HP" % [caster_id, self_heal])
 
 	# Handle self-destruct attacks
 	if action_data.kills_user_on_use:
@@ -394,6 +408,32 @@ func _calculate_damage_from_action(action_data: ActionData, caster_id: String) -
 	total_damage += effect_modifiers
 
 	return max(0, total_damage)
+
+func _calculate_heal_from_action(action_data: ActionData, caster_id: String, heal_type: String) -> int:
+	"""
+	Calculate healing amount from an action, similar to damage calculation.
+	heal_type should be either "target" or "self" to determine which base_heal value to use.
+	"""
+	var base_heal = action_data.base_heal_target if heal_type == "target" else action_data.base_heal_self
+	var total_heal = base_heal
+
+	var caster = _get_entity_by_id(caster_id)
+	if not caster:
+		return 0
+
+	var stats = caster.base_stats
+
+	# Apply stat modifiers for healing
+	total_heal += int(stats.int * action_data.int_heal_modifier)
+	total_heal += int(stats.con * action_data.con_heal_modifier)
+	total_heal += int(stats.spd * action_data.spd_heal_modifier)
+	total_heal += int(stats.luck * action_data.luck_heal_modifier)
+
+	# TODO: Add effect modifiers for healing if needed in the future
+	# var effect_modifiers = _get_total_heal_modifier(caster_id)
+	# total_heal += effect_modifiers
+
+	return max(0, total_heal)
 
 func _calculate_life_steal(entity_id: String, damage_dealt: int) -> int:
 	"""
