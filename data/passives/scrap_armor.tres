@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="PassiveAbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/PassiveAbilityData.gd" id="1_scrap_armor"]
+
+[resource]
+script = ExtResource("1_scrap_armor")
+passive_id = "scrap_armor"
+passive_name = "Scrap Armor"
+description = "Gain +5 armor each time you are hit by a successful attack. Each impact reinforces your defenses."
+trigger_type = "on_being_hit"
+vigor_restore = 0
+heal_amount = 0
+applies_effect_id = ""
+life_steal_percent = 0.0
+aoe_damage_amount = 0
+aoe_targets_allies = false
+armor_gain_on_hit = 5

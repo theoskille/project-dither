@@ -10,6 +10,7 @@ extends Resource
 #   "" (empty string) - Always active (e.g., life steal)
 #   "on_kill" - When entity kills an enemy
 #   "on_turn_end" - At the end of entity's turn
+#   "on_being_hit" - When entity is hit by a successful attack
 @export var trigger_type: String = ""
 
 # Effects when triggered
@@ -24,5 +25,8 @@ extends Resource
 # AoE damage - dealt to adjacent entities when triggered
 @export var aoe_damage_amount: int = 0  # Damage dealt to adjacent entities
 @export var aoe_targets_allies: bool = false  # If true, damages allies too; if false, only enemies
+
+# Armor gain - permanent armor increase when triggered
+@export var armor_gain_on_hit: int = 0  # Amount of armor % to gain when hit
 
 # Future: could add cooldown, chance, conditions, etc.

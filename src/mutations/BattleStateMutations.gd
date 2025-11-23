@@ -131,6 +131,14 @@ func set_entity_armor(entity_id: String, new_armor: float):
 	entity.armor = new_armor
 	BattleStateStore._emit_change(property_path, old_armor, new_armor)
 
+func increase_entity_armor(entity_id: String, amount: float):
+	var entity = _get_entity_by_id(entity_id)
+	if not entity:
+		return
+
+	var new_armor = entity.armor + amount
+	set_entity_armor(entity_id, new_armor)
+
 func decrement_effect_durations(entity_id: String):
 	var entity = _get_entity_by_id(entity_id)
 	if not entity:

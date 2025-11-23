@@ -68,6 +68,9 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	if damage > 0 and attack_hits:
 		var target_entity = _get_entity_by_id(target_id)
 		if target_entity:
+			# Trigger on_being_hit passives (before armor reduction)
+			_trigger_passives(target_id, "on_being_hit")
+
 			# Apply armor reduction to damage
 			var final_damage = _apply_armor_reduction(target_id, damage)
 			var new_hp = max(0, target_entity.current_hp - final_damage)
@@ -138,6 +141,9 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 		if hit_damage > 0 and collision_hits:
 			var hit_target = _get_entity_by_id(hit_entity_id)
 			if hit_target:
+				# Trigger on_being_hit passives (before armor reduction)
+				_trigger_passives(hit_entity_id, "on_being_hit")
+
 				# Apply armor reduction to collision damage
 				var final_hit_damage = _apply_armor_reduction(hit_entity_id, hit_damage)
 				var new_hp = max(0, hit_target.current_hp - final_hit_damage)
@@ -750,6 +756,10 @@ func _trigger_passives(entity_id: String, trigger_type: String, context_target: 
 		if passive.applies_effect_id != "":
 			_apply_effect_to_entity(entity_id, passive.applies_effect_id)
 			print("CombatEngine: Passive '%s' triggered for %s! Applied effect '%s'" % [passive.passive_name, entity_id, passive.applies_effect_id])
+
+		if passive.armor_gain_on_hit > 0:
+			BattleStateMutations.increase_entity_armor(entity_id, passive.armor_gain_on_hit)
+			print("CombatEngine: Passive '%s' triggered for %s! +%d armor" % [passive.passive_name, entity_id, passive.armor_gain_on_hit])
 
 		# Handle AoE damage to adjacent entities
 		if passive.aoe_damage_amount > 0:
