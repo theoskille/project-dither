@@ -38,3 +38,7 @@ extends Resource
 @export var damage_bonus: int = 0
 @export var vigor_cost_reduction: int = 0
 @export var cooldown_reduction: int = 0
+
+# For ability replacement - removes old abilities when unlocking new ones
+@export var replaces_attack_id: String = ""  # Remove this attack when unlocking this skill
+@export var replaces_passive_id: String = ""  # Remove this passive when unlocking this skill

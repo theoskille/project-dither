@@ -126,6 +126,17 @@ func unequip_attack(attack_id: String):
 	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
 	print("PlayerMutations: Unequipped attack '%s' (%d/4 equipped)" % [attack_id, PlayerStore.equipped_attacks.size()])
 
+func remove_attack(attack_id: String):
+	"""Remove an attack from the player (used by skill tree replacements)"""
+	if not attack_id in PlayerStore.equipped_attacks:
+		push_warning("PlayerMutations: Attack '%s' is not equipped" % attack_id)
+		return
+
+	var old_attacks = PlayerStore.equipped_attacks.duplicate()
+	PlayerStore.equipped_attacks.erase(attack_id)
+	PlayerStore._emit_change("equipped_attacks", old_attacks, PlayerStore.equipped_attacks)
+	print("PlayerMutations: Removed attack '%s'" % attack_id)
+
 func add_passive_ability(passive_id: String):
 	"""Add a passive ability to the player"""
 	if passive_id in PlayerStore.passive_abilities:

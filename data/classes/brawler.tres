@@ -16,5 +16,5 @@ base_stats = {
 "str": 14
 }
 skill_tree_path = "res://data/skills/brawler/"
-starting_unlocked_skills = Array[String](["slash"])
+starting_unlocked_skills = Array[String](["strike"])
 starting_passive_abilities = Array[String]([])

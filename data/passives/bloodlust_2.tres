@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PassiveAbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/PassiveAbilityData.gd" id="1_bloodlust_2"]
+
+[resource]
+script = ExtResource("1_bloodlust_2")
+passive_id = "bloodlust_2"
+passive_name = "Bloodlust II"
+description = "Battle ecstasy drives you into a killing frenzy. Gain 2 vigor on kill."
+trigger_type = "on_kill"
+vigor_restore = 2
+heal_amount = 0
+applies_effect_id = ""

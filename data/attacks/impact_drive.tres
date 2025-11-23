@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_impact_drive"]
+
+[resource]
+script = ExtResource("1_impact_drive")
+action_id = "impact_drive"
+action_name = "Impact Drive"
+action_type = "attack"
+vigor_cost = 2
+cooldown = 0
+base_damage = 18
+str_modifier = 2.0
+dex_modifier = 0.0
+int_modifier = 0.0
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 0
+max_range = 0
+move_caster = 0
+move_target = 0
+movement_type = "none"
+applies_effect_id = ""
+effect_duration_override = 0
+base_heal_target = 0
+base_heal_self = 0
+int_heal_modifier = 0.0
+con_heal_modifier = 0.0
+spd_heal_modifier = 0.0
+luck_heal_modifier = 0.0
+targets_self = false
+accuracy = 100.0
+kills_user_on_use = false
+damage_caster = 0

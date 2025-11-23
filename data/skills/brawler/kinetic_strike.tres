@@ -4,21 +4,21 @@
 
 [resource]
 script = ExtResource("1")
-node_id = "slash_upgrade"
-node_name = "Improved Slash"
-description = "Increase Slash damage by 5"
+node_id = "kinetic_strike"
+node_name = "Kinetic Strike"
+description = "A heavy blow that pushes your target backward, creating space."
 icon_path = ""
-grid_x = 0
-grid_y = 3
+grid_x = 1
+grid_y = 0
 skill_point_cost = 1
 level_requirement = 2
-prerequisite_node_ids = ["str_boost_1"]
-skill_type = "upgrade"
-grants_attack_id = ""
+prerequisite_node_ids = Array[String](["strike"])
+skill_type = "attack"
+grants_attack_id = "kinetic_strike"
 grants_passive_id = ""
 stat_bonus_type = ""
 stat_bonus_amount = 0
-upgrades_attack_id = "slash"
-damage_bonus = 5
+upgrades_attack_id = ""
+damage_bonus = 0
 vigor_cost_reduction = 0
 cooldown_reduction = 0

@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_bloodthirst")
-passive_id = "bloodthirst"
-passive_name = "Bloodthirst"
+passive_id = "bloodlust"
+passive_name = "Bloodlust"
 description = "When you kill an enemy, gain 1 vigor. The thrill of victory energizes you for your next action."
 trigger_type = "on_kill"
 vigor_restore = 1

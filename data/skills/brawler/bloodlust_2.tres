@@ -4,21 +4,23 @@
 
 [resource]
 script = ExtResource("1")
-node_id = "vampirism"
-node_name = "Vampirism"
-description = "Heal for 20% of all damage you deal. Drain the life force from your enemies to sustain yourself."
+node_id = "bloodlust_2"
+node_name = "Bloodlust II"
+description = "Battle ecstasy drives you into a killing frenzy. Gain 2 vigor on kill."
 icon_path = ""
-grid_x = 1
-grid_y = -1
+grid_x = 0
+grid_y = 5
 skill_point_cost = 3
-level_requirement = 8
-prerequisite_node_ids = Array[String](["bloodthirst"])
+level_requirement = 15
+prerequisite_node_ids = Array[String](["bloodlust"])
 skill_type = "passive"
 grants_attack_id = ""
-grants_passive_id = "vampirism"
+grants_passive_id = "bloodlust_2"
 stat_bonus_type = ""
 stat_bonus_amount = 0
 upgrades_attack_id = ""
 damage_bonus = 0
 vigor_cost_reduction = 0
 cooldown_reduction = 0
+replaces_attack_id = ""
+replaces_passive_id = "bloodlust"

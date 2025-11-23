@@ -4,20 +4,20 @@
 
 [resource]
 script = ExtResource("1")
-node_id = "str_boost_2"
-node_name = "Strength II"
-description = "Further increase your Strength by 3"
+node_id = "strike"
+node_name = "Strike"
+description = "A powerful melee strike. Your fundamental attack as a Brawler."
 icon_path = ""
 grid_x = 0
-grid_y = 3
-skill_point_cost = 1
-level_requirement = 3
-prerequisite_node_ids = Array[String](["impact_drive"])
-skill_type = "stat_bonus"
-grants_attack_id = ""
+grid_y = 0
+skill_point_cost = 0
+level_requirement = 1
+prerequisite_node_ids = Array[String]([])
+skill_type = "attack"
+grants_attack_id = "strike"
 grants_passive_id = ""
-stat_bonus_type = "str"
-stat_bonus_amount = 3
+stat_bonus_type = ""
+stat_bonus_amount = 0
 upgrades_attack_id = ""
 damage_bonus = 0
 vigor_cost_reduction = 0

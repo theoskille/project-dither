@@ -4,18 +4,18 @@
 
 [resource]
 script = ExtResource("1")
-node_id = "bloodthirst"
-node_name = "Bloodthirst"
-description = "When you kill an enemy, gain 1 vigor. Feed on the carnage of battle."
+node_id = "power_siphon"
+node_name = "Power Siphon"
+description = "Your strikes siphon kinetic energy from enemies. Heal for 20% of damage dealt."
 icon_path = ""
-grid_x = 1
-grid_y = 1
-skill_point_cost = 2
-level_requirement = 5
-prerequisite_node_ids = Array[String](["dash_strike", "knockback_strike"])
+grid_x = 0
+grid_y = -1
+skill_point_cost = 3
+level_requirement = 10
+prerequisite_node_ids = Array[String](["strike"])
 skill_type = "passive"
 grants_attack_id = ""
-grants_passive_id = "bloodthirst"
+grants_passive_id = "power_siphon"
 stat_bonus_type = ""
 stat_bonus_amount = 0
 upgrades_attack_id = ""

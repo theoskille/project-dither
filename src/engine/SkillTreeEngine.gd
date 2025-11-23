@@ -126,6 +126,14 @@ func attempt_unlock_skill(skill_id: String) -> bool:
 
 func _apply_skill_rewards(skill_node: SkillNodeData):
 	"""Apply the rewards for unlocking a skill"""
+	# Handle ability replacements first
+	if skill_node.replaces_attack_id != "":
+		PlayerMutations.remove_attack(skill_node.replaces_attack_id)
+
+	if skill_node.replaces_passive_id != "":
+		PlayerMutations.remove_passive_ability(skill_node.replaces_passive_id)
+
+	# Then grant new abilities
 	match skill_node.skill_type:
 		"attack":
 			if skill_node.grants_attack_id != "":

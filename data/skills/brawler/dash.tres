@@ -4,21 +4,23 @@
 
 [resource]
 script = ExtResource("1")
-node_id = "str_boost_2"
-node_name = "Strength II"
-description = "Further increase your Strength by 3"
+node_id = "dash"
+node_name = "Dash"
+description = "Rapidly reposition using explosive momentum."
 icon_path = ""
-grid_x = 0
-grid_y = 3
+grid_x = -1
+grid_y = 1
 skill_point_cost = 1
-level_requirement = 3
-prerequisite_node_ids = Array[String](["impact_drive"])
-skill_type = "stat_bonus"
-grants_attack_id = ""
+level_requirement = 2
+prerequisite_node_ids = Array[String](["strike"])
+skill_type = "attack"
+grants_attack_id = "dash"
 grants_passive_id = ""
-stat_bonus_type = "str"
-stat_bonus_amount = 3
+stat_bonus_type = ""
+stat_bonus_amount = 0
 upgrades_attack_id = ""
 damage_bonus = 0
 vigor_cost_reduction = 0
 cooldown_reduction = 0
+replaces_attack_id = ""
+replaces_passive_id = ""
