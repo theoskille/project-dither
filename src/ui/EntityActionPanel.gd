@@ -154,6 +154,15 @@ func _on_action_button_pressed(action_id: String):
 	if not action:
 		return
 
+	# DEBUG: Check if targets_self property exists and its value
+	print("EntityActionPanel: action_id='%s', targets_self=%s" % [action_id, action.targets_self])
+
+	# If action targets self, execute immediately without target selection
+	if action.targets_self:
+		print("EntityActionPanel: Executing self-targeting action for %s" % entity_name)
+		CombatEngine.execute_move(action, entity_name, entity_name)
+		return
+
 	# For player, show target selection panel
 	if entity_name == "player":
 		pending_action_id = action_id

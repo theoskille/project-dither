@@ -81,13 +81,6 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			if heal_amount > 0:
 				BattleStateMutations.heal_entity(caster_id, heal_amount)
 
-			# Apply target healing if action has heal_target property
-			if action_data.base_heal_target > 0:
-				var target_heal = _calculate_heal_from_action(action_data, caster_id, "target")
-				if target_heal > 0:
-					BattleStateMutations.heal_entity(target_id, target_heal)
-					print("CombatEngine: %s healed %s for %d HP" % [caster_id, target_id, target_heal])
-
 			# Check for death and trigger on_kill passives
 			if new_hp == 0:
 				_trigger_passives(caster_id, "on_kill", target_id)
@@ -100,6 +93,13 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 					DungeonStateMutations.increment_enemies_defeated()
 
 				_check_victory()
+
+	# Apply target healing if action has heal_target property (independent of damage)
+	if action_data.base_heal_target > 0:
+		var target_heal = _calculate_heal_from_action(action_data, caster_id, "target")
+		if target_heal > 0:
+			BattleStateMutations.heal_entity(target_id, target_heal)
+			print("CombatEngine: %s healed %s for %d HP" % [caster_id, target_id, target_heal])
 
 	# Get battlefield size for boundary clamping
 	var max_position = BattleStateStore.get_state_value("battlefield.total_tiles") - 1

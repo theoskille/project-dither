@@ -464,6 +464,11 @@ func _on_action_button_pressed(action_id: String):
 	if not action:
 		return
 
+	# If action targets self, execute immediately without target selection
+	if action.targets_self:
+		CombatEngine.execute_move(action, entity_name, entity_name)
+		return
+
 	pending_action_id = action_id
 	_show_target_selection(action)
 

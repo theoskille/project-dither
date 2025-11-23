@@ -29,6 +29,7 @@ int_heal_modifier = 0.0
 con_heal_modifier = 0.0
 spd_heal_modifier = 0.0
 luck_heal_modifier = 0.0
+targets_self = true
 accuracy = 100.0
 kills_user_on_use = false
 damage_caster = 0

@@ -33,3 +33,4 @@ int_heal_modifier = 0.0
 con_heal_modifier = 1.5
 spd_heal_modifier = 0.0
 luck_heal_modifier = 0.0
+targets_self = true

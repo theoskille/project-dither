@@ -30,3 +30,4 @@ extends Resource
 @export var con_heal_modifier: float = 0.0  # CON scaling for healing
 @export var spd_heal_modifier: float = 0.0  # SPD scaling for healing
 @export var luck_heal_modifier: float = 0.0  # LUCK scaling for healing
+@export var targets_self: bool = false  # If true, this action targets the caster (skips target selection)
