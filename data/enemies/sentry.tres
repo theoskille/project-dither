@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_sentry"]
+
+[resource]
+script = ExtResource("1_sentry")
+enemy_id = "sentry"
+enemy_name = "Sentry"
+max_hp = 70
+max_vigor = 3
+base_stats = {
+"str": 10,
+"dex": 10,
+"int": 8,
+"con": 11,
+"spd": 9,
+"luck": 8
+}
+equipped_attacks = Array[String](["slash", "scrap_barrage"])
+passive_abilities = Array[String]([])
+sprite_path = ""
+xp_reward = 45

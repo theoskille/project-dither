@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ActionData.gd" id="1_magnetic_pull"]
+
+[resource]
+script = ExtResource("1_magnetic_pull")
+action_id = "magnetic_pull"
+action_name = "Magnetic Pull"
+action_type = "special"
+vigor_cost = 1
+cooldown = 2
+base_damage = 2
+str_modifier = 0.0
+dex_modifier = 0.0
+int_modifier = 0.5
+con_modifier = 0.0
+spd_modifier = 0.0
+luck_modifier = 0.0
+min_range = 2
+max_range = 4
+move_caster = 0
+move_target = -2
+movement_type = "none"
+applies_effect_id = ""
+effect_duration_override = 0
+base_heal_target = 0
+base_heal_self = 0
+int_heal_modifier = 0.0
+con_heal_modifier = 0.0
+spd_heal_modifier = 0.0
+luck_heal_modifier = 0.0
+accuracy = 95.0
+kills_user_on_use = false
+damage_caster = 0

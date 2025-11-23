@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_molten_core"]
+
+[resource]
+script = ExtResource("1_molten_core")
+enemy_id = "molten_core"
+enemy_name = "Molten Core"
+max_hp = 65
+max_vigor = 3
+base_stats = {
+"str": 7,
+"dex": 8,
+"int": 12,
+"con": 8,
+"spd": 10,
+"luck": 7
+}
+equipped_attacks = Array[String](["molten_spray", "slash"])
+passive_abilities = Array[String](["molten_aura"])
+sprite_path = ""
+xp_reward = 50

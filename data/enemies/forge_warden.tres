@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_forge_warden"]
+
+[resource]
+script = ExtResource("1_forge_warden")
+enemy_id = "forge_warden"
+enemy_name = "Forge Warden"
+max_hp = 140
+max_vigor = 3
+base_stats = {
+"str": 14,
+"dex": 10,
+"int": 10,
+"con": 16,
+"spd": 8,
+"luck": 9
+}
+equipped_attacks = Array[String](["overload", "magnetic_pull", "liquify", "slash"])
+passive_abilities = Array[String](["self_repair", "scrap_armor"])
+sprite_path = ""
+xp_reward = 100

@@ -13,7 +13,16 @@ const ENCOUNTERS = [
 	{"id": "tank_and_archer", "name": "Tank and Archer"},
 	{"id": "goblin_gang", "name": "Goblin Gang"},
 	{"id": "spider_encounter", "name": "Spider Encounter"},
-	{"id": "boss_encounter", "name": "Boss Encounter"}
+	{"id": "boss_encounter", "name": "Boss Encounter"},
+	{"id": "foundry_1_rust_mite", "name": "Foundry 1: Rust Mite"},
+	{"id": "foundry_2_slag_hauler", "name": "Foundry 2: Slag Hauler"},
+	{"id": "foundry_3_sentry_pair", "name": "Foundry 3: Sentry Pair"},
+	{"id": "foundry_4_molten_guard", "name": "Foundry 4: Molten Guard"},
+	{"id": "foundry_5_hauler_support", "name": "Foundry 5: Hauler Support"},
+	{"id": "foundry_6_sentry_squad", "name": "Foundry 6: Sentry Squad"},
+	{"id": "foundry_7_weaver_core", "name": "Foundry 7: Weaver Core"},
+	{"id": "foundry_8_forge_warden", "name": "Foundry 8: Forge Warden"},
+	{"id": "foundry_9_foundry_heart", "name": "Foundry 9: Foundry Heart (BOSS)"}
 ]
 
 func _ready():

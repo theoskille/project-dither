@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EncounterData.gd" id="1_foundry_6"]
+
+[resource]
+script = ExtResource("1_foundry_6")
+encounter_id = "foundry_6_sentry_squad"
+enemy_configs = [
+{
+"enemy_id": "sentry",
+"position": 5
+},
+{
+"enemy_id": "sentry",
+"position": 7
+},
+{
+"enemy_id": "sentry",
+"position": 9
+}
+]

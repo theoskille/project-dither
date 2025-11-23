@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EnemyData.gd" id="1_iron_weaver"]
+
+[resource]
+script = ExtResource("1_iron_weaver")
+enemy_id = "iron_weaver"
+enemy_name = "Iron Weaver"
+max_hp = 80
+max_vigor = 3
+base_stats = {
+"str": 8,
+"dex": 9,
+"int": 11,
+"con": 12,
+"spd": 8,
+"luck": 8
+}
+equipped_attacks = Array[String](["corrode", "reinforce", "repair_ally"])
+passive_abilities = Array[String]([])
+sprite_path = ""
+xp_reward = 60

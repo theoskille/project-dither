@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EncounterData.gd" id="1_foundry_5"]
+
+[resource]
+script = ExtResource("1_foundry_5")
+encounter_id = "foundry_5_hauler_support"
+enemy_configs = [
+{
+"enemy_id": "slag_hauler",
+"position": 7
+},
+{
+"enemy_id": "iron_weaver",
+"position": 9
+}
+]

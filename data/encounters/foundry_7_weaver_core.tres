@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EncounterData.gd" id="1_foundry_7"]
+
+[resource]
+script = ExtResource("1_foundry_7")
+encounter_id = "foundry_7_weaver_core"
+enemy_configs = [
+{
+"enemy_id": "iron_weaver",
+"position": 6
+},
+{
+"enemy_id": "molten_core",
+"position": 8
+}
+]
