@@ -12,6 +12,7 @@ var current_view: Control = null
 
 var dungeon_view: Control
 var combat_view: Control
+var shop_view: Control
 var victory_screen: Control
 var dungeon_victory_screen: Control
 
@@ -191,6 +192,7 @@ func _switch_to_dungeon_view():
 
 	# Connect to dungeon view signals
 	dungeon_view.inventory_button_pressed.connect(_on_inventory_opened)
+	dungeon_view.shop_button_pressed.connect(_on_shop_button_pressed)
 
 	view_stack.append(dungeon_view)
 	current_view = dungeon_view
@@ -232,11 +234,57 @@ func _switch_to_combat_view(encounter_id: String):
 	current_view = combat_view
 	current_mode = GameMode.COMBAT
 
+func _switch_to_shop_view():
+	print("Main: Switching to shop view")
+
+	# Clear view stack
+	for view in view_stack:
+		remove_child(view)
+		view.queue_free()
+	view_stack.clear()
+
+	# Generate shop inventory
+	var shop_items = ShopEngine.generate_shop_inventory()
+
+	# Create shop view (but don't add to tree yet)
+	shop_view = Control.new()
+	shop_view.set_script(preload("res://src/ui/ShopView.gd"))
+
+	# Initialize shop BEFORE adding to tree
+	# This ensures shop items are set before _ready() is called
+	shop_view.initialize_shop(shop_items)
+
+	# Now add to tree - this triggers _ready() and UI building
+	shop_view.anchor_right = 1.0
+	shop_view.anchor_bottom = 1.0
+	add_child(shop_view)
+
+	# Connect to shop view signals
+	shop_view.back_button_pressed.connect(_on_shop_closed)
+
+	view_stack.append(shop_view)
+	current_view = shop_view
+
 func _on_encounter_triggered(encounter_id: String):
 	print("Main: Encounter triggered: %s" % encounter_id)
-	_switch_to_combat_view(encounter_id)
 
-func _on_victory_achieved(total_xp: int, levels_gained: int):
+	# Check if this is a shop encounter
+	if encounter_id == "shop_encounter":
+		var current_room_id = DungeonStateStore.current_room_id
+
+		# Auto-enter shop on first visit
+		if not ShopEngine.has_visited_shop(current_room_id):
+			print("Main: First visit to shop, auto-entering")
+			ShopEngine.mark_shop_as_visited(current_room_id)
+			_switch_to_shop_view()
+		else:
+			print("Main: Shop already visited, player must use Shop button")
+			# Don't auto-enter, player must click Shop button
+	else:
+		# Regular combat encounter
+		_switch_to_combat_view(encounter_id)
+
+func _on_victory_achieved(total_xp: int, total_scrap: int, levels_gained: int):
 	print("Main: Victory achieved - showing victory screen")
 
 	# Create victory screen overlay
@@ -245,8 +293,8 @@ func _on_victory_achieved(total_xp: int, levels_gained: int):
 	victory_screen.anchor_right = 1.0
 	victory_screen.anchor_bottom = 1.0
 
-	# Initialize with XP data BEFORE adding to tree
-	victory_screen.initialize(total_xp, levels_gained)
+	# Initialize with XP and scrap data BEFORE adding to tree
+	victory_screen.initialize(total_xp, total_scrap, levels_gained)
 
 	# Add to tree (this triggers _ready())
 	add_child(victory_screen)
@@ -329,3 +377,11 @@ func _on_inventory_opened():
 func _on_inventory_closed():
 	print("Main: Closing inventory view")
 	pop_view()
+
+func _on_shop_button_pressed():
+	print("Main: Shop button pressed - entering shop")
+	_switch_to_shop_view()
+
+func _on_shop_closed():
+	print("Main: Shop closed - returning to dungeon")
+	_switch_to_dungeon_view()

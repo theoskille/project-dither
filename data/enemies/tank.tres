@@ -19,3 +19,4 @@ base_stats = {
 equipped_attacks = Array[String](["slash"])
 passive_abilities = Array[String](["sentinel"])
 xp_reward = 70
+scrap_reward = 10

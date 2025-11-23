@@ -17,3 +17,4 @@ extends Resource
 @export var passive_abilities: Array[String] = []
 @export var sprite_path: String = ""
 @export var xp_reward: int = 10
+@export var scrap_reward: int = 5

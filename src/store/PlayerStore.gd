@@ -14,12 +14,14 @@ signal item_equipped(slot: String, item_id: String)
 signal item_unequipped(slot: String, item_id: String)
 signal item_added(item_id: String)
 signal item_removed(item_id: String)
+signal scrap_changed(old_value: int, new_value: int)
 
 # Player persistent data
 var selected_character_class: String = ""
 var level: int = 1
 var current_xp: int = 0
 var current_hp: int = 0  # Persistent health that carries between encounters
+var scrap: int = 0  # Currency for shop purchases
 
 # Skill tree data
 var skill_points: int = 0

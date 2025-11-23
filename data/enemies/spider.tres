@@ -20,3 +20,4 @@ equipped_attacks = ["poison_fang"]
 passive_abilities = []
 sprite_path = ""
 xp_reward = 45
+scrap_reward = 6

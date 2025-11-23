@@ -10,6 +10,7 @@ description = "Light protective gear made from cured leather. Provides good defe
 item_type = 1
 rarity = 0
 sprite_path = ""
+shop_price = 25
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 0

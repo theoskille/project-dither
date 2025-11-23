@@ -20,3 +20,4 @@ equipped_attacks = Array[String](["corrode", "reinforce", "repair_ally"])
 passive_abilities = Array[String]([])
 sprite_path = ""
 xp_reward = 60
+scrap_reward = 9

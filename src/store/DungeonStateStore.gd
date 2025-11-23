@@ -26,6 +26,9 @@ class Room:
 var rooms: Dictionary = {}  # Dictionary of Room instances, keyed by room_id
 var current_room_id: String = ""
 
+# Shop tracking
+var visited_shops: Array[String] = []  # Array of room_ids where shops have been entered
+
 # Dungeon statistics
 var enemies_defeated: int = 0
 var rooms_cleared: int = 0

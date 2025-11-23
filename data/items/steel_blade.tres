@@ -10,6 +10,7 @@ description = "A finely crafted blade made from tempered steel. Cuts through ene
 item_type = 0
 rarity = 1
 sprite_path = ""
+shop_price = 50
 str_bonus = 5
 dex_bonus = 2
 int_bonus = 0

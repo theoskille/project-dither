@@ -7,6 +7,7 @@ extends Control
 signal continue_pressed()
 
 var xp_label: Label
+var scrap_label: Label
 var level_label: Label
 var xp_progress_label: Label
 var level_up_label: Label
@@ -14,6 +15,7 @@ var xp_progress_bar: ProgressBar
 var continue_button: Button
 
 var _total_xp_gained: int = 0
+var _total_scrap_gained: int = 0
 var _levels_gained: int = 0
 
 func _ready():
@@ -31,7 +33,7 @@ func _ready():
 	_build_ui()
 
 	# Update display with initialized data (if set before _ready)
-	if _total_xp_gained > 0 or _levels_gained > 0:
+	if _total_xp_gained > 0 or _total_scrap_gained > 0 or _levels_gained > 0:
 		_update_display()
 
 func _build_ui():
@@ -69,6 +71,14 @@ func _build_ui():
 	xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	xp_label.add_theme_font_size_override("font_size", 20)
 	vbox.add_child(xp_label)
+
+	# Scrap gained label
+	scrap_label = Label.new()
+	scrap_label.text = "+0 Scrap"
+	scrap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	scrap_label.add_theme_font_size_override("font_size", 18)
+	scrap_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.5))  # Slightly golden
+	vbox.add_child(scrap_label)
 
 	# Level display
 	level_label = Label.new()
@@ -121,16 +131,20 @@ func _build_ui():
 	button_container.add_child(continue_button)
 	vbox.add_child(button_container)
 
-func initialize(total_xp: int, levels_gained: int):
-	"""Initialize the victory screen with XP data before adding to tree"""
+func initialize(total_xp: int, total_scrap: int, levels_gained: int):
+	"""Initialize the victory screen with XP and scrap data before adding to tree"""
 	_total_xp_gained = total_xp
+	_total_scrap_gained = total_scrap
 	_levels_gained = levels_gained
 
 func _update_display():
-	"""Update UI elements with current XP data"""
+	"""Update UI elements with current XP and scrap data"""
 
 	# Update XP gained label
 	xp_label.text = "+%d XP Gained" % _total_xp_gained
+
+	# Update scrap gained label
+	scrap_label.text = "+%d Scrap" % _total_scrap_gained
 
 	# Update level display
 	var current_level = PlayerStore.level

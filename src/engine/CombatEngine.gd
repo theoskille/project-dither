@@ -2,7 +2,7 @@ extends Node
 
 ## Signals
 signal battle_ended()  # Emitted when all enemies are defeated
-signal victory_achieved(total_xp: int, levels_gained: int)  # Emitted after XP awarded and level ups processed
+signal victory_achieved(total_xp: int, total_scrap: int, levels_gained: int)  # Emitted after XP and scrap awarded, level ups processed
 
 # Reset battle state to clean slate (call before starting new encounter)
 func reset_battle():
@@ -828,8 +828,14 @@ func _check_victory():
 		# Calculate total XP from all defeated enemies
 		var total_xp = _calculate_total_xp_reward()
 
+		# Calculate total scrap from all defeated enemies
+		var total_scrap = _calculate_total_scrap_reward()
+
 		# Award XP to player
 		PlayerMutations.add_xp(total_xp)
+
+		# Award scrap to player
+		ShopMutations.add_scrap(total_scrap)
 
 		# Check for level ups (loop to handle multiple level ups)
 		var levels_gained = 0
@@ -839,7 +845,7 @@ func _check_victory():
 
 		# Emit signals
 		battle_ended.emit()
-		victory_achieved.emit(total_xp, levels_gained)
+		victory_achieved.emit(total_xp, total_scrap, levels_gained)
 
 		return true
 
@@ -861,6 +867,23 @@ func _calculate_total_xp_reward() -> int:
 
 	print("CombatEngine: Total XP reward: %d" % total_xp)
 	return total_xp
+
+func _calculate_total_scrap_reward() -> int:
+	"""Calculate total scrap from all defeated enemies in current battle"""
+	var total_scrap = 0
+	var enemies = BattleStateStore.battle_state.enemies
+
+	for i in range(enemies.size()):
+		var enemy_state = enemies[i]
+		var enemy_data = EnemyDatabase.get_enemy(enemy_state.enemy_id)
+		if enemy_data:
+			total_scrap += enemy_data.scrap_reward
+			print("CombatEngine: Enemy %d (%s) rewards %d scrap" % [i, enemy_data.enemy_name, enemy_data.scrap_reward])
+		else:
+			push_warning("CombatEngine: Could not find enemy data for enemy_id '%s'" % enemy_state.enemy_id)
+
+	print("CombatEngine: Total scrap reward: %d" % total_scrap)
+	return total_scrap
 
 func _calculate_xp_for_level(level: int) -> int:
 	"""Calculate XP required to reach the given level (linear curve: 20 * level)"""

@@ -28,6 +28,9 @@ enum Rarity {
 # Visual representation
 @export var sprite_path: String = ""
 
+# Shop system
+@export var shop_price: int = 50
+
 # Flat stat bonuses (added directly to stats)
 @export_group("Flat Stat Bonuses")
 @export var str_bonus: int = 0

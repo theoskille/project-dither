@@ -10,6 +10,7 @@ description = "A silver ring imbued with speed-enhancing magic. Makes the wearer
 item_type = 2
 rarity = 1
 sprite_path = ""
+shop_price = 45
 str_bonus = 0
 dex_bonus = 2
 int_bonus = 0

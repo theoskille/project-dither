@@ -8,6 +8,10 @@ signal encounter_triggered(encounter_id: String)
 signal dungeon_completed()
 signal boss_defeated()
 
+# TESTING: Force second room to always be a shop for easy testing
+# TODO: Set to false for production
+const TESTING_FORCE_SHOP_IN_SECOND_ROOM = true
+
 var _exit_room_id: String = ""  # Tracks the designated exit room
 
 # Generate a sparse grid-based maze dungeon (organic layout using grow-and-branch)
@@ -15,7 +19,7 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 	var rooms_dict = {}
 
 	# Define available encounters for random assignment
-	var available_encounters = ["single_goblin", "slime_encounter", "tank_and_archer", "goblin_gang", "spider_encounter", ""]  # "" = no encounter
+	var available_encounters = ["single_goblin", "slime_encounter", "tank_and_archer", "goblin_gang", "spider_encounter", "shop_encounter", ""]  # "" = no encounter
 
 	# Step 1: Grow dungeon organically using "grow-and-branch" algorithm
 	var total_positions = rows * cols
@@ -146,6 +150,18 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 				room.encounter_id = available_encounters[encounter_index]
 			else:
 				room.encounter_id = ""
+
+	# TESTING: Force second room to be shop
+	if TESTING_FORCE_SHOP_IN_SECOND_ROOM:
+		var start_room = rooms_dict.get("room_0_0")
+		if start_room:
+			# Find first connected room that isn't the boss room
+			for direction in ["north", "south", "east", "west"]:
+				var connected_room_id = start_room.connections[direction]
+				if connected_room_id != null and connected_room_id != exit_room_id:
+					rooms_dict[connected_room_id].encounter_id = "shop_encounter"
+					print("DungeonEngine: [TESTING] Forced %s to be shop encounter" % connected_room_id)
+					break
 
 	# Initialize dungeon state via mutations
 	DungeonStateMutations.set_rooms(rooms_dict)

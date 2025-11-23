@@ -10,6 +10,7 @@ description = "A sturdy blade forged from iron. Reliable in combat."
 item_type = 0
 rarity = 0
 sprite_path = ""
+shop_price = 25
 str_bonus = 3
 dex_bonus = 0
 int_bonus = 0

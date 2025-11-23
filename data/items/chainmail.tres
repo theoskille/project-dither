@@ -10,6 +10,7 @@ description = "Heavy armor made of interlocking metal rings. Provides excellent 
 item_type = 1
 rarity = 1
 sprite_path = ""
+shop_price = 60
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 0

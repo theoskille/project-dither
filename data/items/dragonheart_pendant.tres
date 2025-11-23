@@ -10,6 +10,7 @@ description = "A legendary pendant containing the crystalized heart of an ancien
 item_type = 2
 rarity = 3
 sprite_path = ""
+shop_price = 250
 str_bonus = 5
 dex_bonus = 5
 int_bonus = 5

@@ -10,6 +10,7 @@ description = "A radiant amulet containing a flawless ruby. Infuses the wearer w
 item_type = 2
 rarity = 2
 sprite_path = ""
+shop_price = 100
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 0

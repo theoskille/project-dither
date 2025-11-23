@@ -20,3 +20,4 @@ equipped_attacks = Array[String](["molten_spray", "slash"])
 passive_abilities = Array[String](["molten_aura"])
 sprite_path = ""
 xp_reward = 50
+scrap_reward = 7

@@ -10,6 +10,7 @@ description = "Enchanted spectacles that sharpen the mind and enhance magical pr
 item_type = 2
 rarity = 1
 sprite_path = ""
+shop_price = 50
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 4
