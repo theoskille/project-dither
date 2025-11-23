@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_encounter")
-encounter_id = "shop_encounter"
-encounter_type = "shop"
+encounter_id = "narrative_shrine"
+encounter_type = "narrative"
 enemy_configs = Array[Dictionary]([])
+narrative_id = "mysterious_shrine"

@@ -13,6 +13,7 @@ var current_view: Control = null
 var dungeon_view: Control
 var combat_view: Control
 var shop_view: Control
+var narrative_view: Control
 var victory_screen: Control
 var dungeon_victory_screen: Control
 
@@ -25,6 +26,7 @@ func _ready():
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
 	DungeonEngine.boss_defeated.connect(_on_boss_defeated)
 	CombatEngine.victory_achieved.connect(_on_victory_achieved)
+	NarrativeEngine.combat_triggered_from_narrative.connect(_on_combat_triggered_from_narrative)
 
 	# Start with title screen
 	_show_title_screen()
@@ -299,8 +301,14 @@ func _switch_to_shop_view():
 func _on_encounter_triggered(encounter_id: String):
 	print("Main: Encounter triggered: %s" % encounter_id)
 
-	# Check if this is a shop encounter
-	if encounter_id == "shop_encounter":
+	# Get encounter data to check type
+	var encounter = EncounterDatabase.get_encounter(encounter_id)
+	if encounter == null:
+		push_error("Main: Encounter '%s' not found" % encounter_id)
+		return
+
+	# Handle different encounter types
+	if encounter.encounter_type == "shop":
 		var current_room_id = DungeonStateStore.current_room_id
 
 		# Auto-enter shop on first visit
@@ -311,8 +319,11 @@ func _on_encounter_triggered(encounter_id: String):
 		else:
 			print("Main: Shop already visited, player must use Shop button")
 			# Don't auto-enter, player must click Shop button
+	elif encounter.encounter_type == "narrative":
+		# Narrative encounter
+		_switch_to_narrative_view(encounter.narrative_id)
 	else:
-		# Regular combat encounter
+		# Regular combat encounter (default)
 		_switch_to_combat_view(encounter_id)
 
 func _on_victory_achieved(total_xp: int, total_scrap: int, levels_gained: int):
@@ -416,3 +427,51 @@ func _on_shop_button_pressed():
 func _on_shop_closed():
 	print("Main: Shop closed - returning to dungeon")
 	_switch_to_dungeon_view()
+
+func _switch_to_narrative_view(narrative_id: String):
+	"""Switch to narrative view with the specified narrative"""
+	print("Main: Switching to narrative view: %s" % narrative_id)
+
+	# Clear view stack
+	for view in view_stack:
+		remove_child(view)
+		view.queue_free()
+	view_stack.clear()
+
+	# Create narrative view
+	narrative_view = Control.new()
+	narrative_view.set_script(preload("res://src/ui/NarrativeView.gd"))
+	narrative_view.anchor_right = 1.0
+	narrative_view.anchor_bottom = 1.0
+
+	# Initialize with narrative data BEFORE adding to tree
+	narrative_view.initialize_narrative(narrative_id)
+
+	# Start the narrative in the engine
+	NarrativeEngine.start_narrative(narrative_id)
+
+	# Add to tree (this triggers _ready())
+	add_child(narrative_view)
+
+	# Connect to narrative view signals
+	narrative_view.narrative_view_exited.connect(_on_narrative_closed)
+
+	view_stack.append(narrative_view)
+	current_view = narrative_view
+
+func _on_narrative_closed():
+	"""Handle narrative view closing - return to dungeon"""
+	print("Main: Narrative closed - returning to dungeon")
+
+	# Clear the encounter from the current room
+	var current_room_id = DungeonStateStore.current_room_id
+	DungeonStateMutations.clear_room_encounter(current_room_id)
+
+	_switch_to_dungeon_view()
+
+func _on_combat_triggered_from_narrative(encounter_id: String):
+	"""Handle combat being triggered from a narrative choice"""
+	print("Main: Combat triggered from narrative: %s" % encounter_id)
+
+	# Switch from narrative view to combat view
+	_switch_to_combat_view(encounter_id)

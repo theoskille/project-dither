@@ -23,7 +23,9 @@ const ENCOUNTERS = [
 	{"id": "foundry_6_sentry_squad", "name": "Foundry 6: Sentry Squad"},
 	{"id": "foundry_7_weaver_core", "name": "Foundry 7: Weaver Core"},
 	{"id": "foundry_8_forge_warden", "name": "Foundry 8: Forge Warden"},
-	{"id": "foundry_9_foundry_heart", "name": "Foundry 9: Foundry Heart (BOSS)"}
+	{"id": "foundry_9_foundry_heart", "name": "Foundry 9: Foundry Heart (BOSS)"},
+	{"id": "narrative_shrine", "name": "NARRATIVE: Mysterious Shrine"},
+	{"id": "narrative_merchant", "name": "NARRATIVE: Strange Merchant"}
 ]
 
 # UI references for player config

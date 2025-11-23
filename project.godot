@@ -37,6 +37,7 @@ InventoryMutations="*res://src/mutations/InventoryMutations.gd"
 ShopMutations="*res://src/mutations/ShopMutations.gd"
 ItemEngine="*res://src/engine/ItemEngine.gd"
 ShopEngine="*res://src/engine/ShopEngine.gd"
+NarrativeEngine="*res://src/engine/NarrativeEngine.gd"
 SkillTreeEngine="*res://src/engine/SkillTreeEngine.gd"
 CharacterClassEngine="*res://src/engine/CharacterClassEngine.gd"
 

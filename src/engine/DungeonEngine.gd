@@ -8,18 +8,31 @@ signal encounter_triggered(encounter_id: String)
 signal dungeon_completed()
 signal boss_defeated()
 
-# TESTING: Force second room to always be a shop for easy testing
-# TODO: Set to false for production
-const TESTING_FORCE_SHOP_IN_SECOND_ROOM = true
-
 var _exit_room_id: String = ""  # Tracks the designated exit room
 
 # Generate a sparse grid-based maze dungeon (organic layout using grow-and-branch)
 func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float = 0.55):
 	var rooms_dict = {}
 
-	# Define available encounters for random assignment
-	var available_encounters = ["single_goblin", "slime_encounter", "tank_and_archer", "goblin_gang", "spider_encounter", "shop_encounter", ""]  # "" = no encounter
+	# Define encounter pools by type for fine-grained spawn control
+	var combat_encounters = [
+		"foundry_1_rust_mite",
+		"foundry_2_slag_hauler",
+		"foundry_3_sentry_pair",
+		"foundry_4_molten_guard",
+		"foundry_5_hauler_support",
+		"foundry_6_sentry_squad",
+		"foundry_7_weaver_core",
+		"foundry_8_forge_warden"
+	]
+	var shop_encounters = ["shop_encounter"]
+	var narrative_encounters = ["narrative_shrine", "narrative_merchant"]
+
+	# Spawn probabilities for random encounters (shops are guaranteed separately)
+	var combat_chance = 0.65      # 65% chance for combat
+	var narrative_chance = 0.15   # 15% chance for narrative
+	var empty_chance = 0.20       # 20% chance for empty room
+	# Note: Shops are placed after random assignment (guaranteed 1, max 2)
 
 	# Step 1: Grow dungeon organically using "grow-and-branch" algorithm
 	var total_positions = rows * cols
@@ -140,28 +153,61 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 			room.encounter_id = ""
 			room.room_type = "normal"
 		elif room_id == exit_room_id:  # Boss room (exit)
-			room.encounter_id = "boss_encounter"
+			room.encounter_id = "foundry_9_foundry_heart"
 			room.room_type = "boss"
 		else:
-			# 75% chance of encounter in other rooms
+			# Randomly assign encounter type based on probabilities (shops handled separately)
 			room.room_type = "normal"
-			if randf() < 0.75:
-				var encounter_index = randi() % (available_encounters.size() - 1)  # Exclude empty string
-				room.encounter_id = available_encounters[encounter_index]
+			var roll = randf()
+
+			if roll < combat_chance:
+				# Combat encounter
+				var encounter_index = randi() % combat_encounters.size()
+				room.encounter_id = combat_encounters[encounter_index]
+			elif roll < combat_chance + narrative_chance:
+				# Narrative encounter
+				var encounter_index = randi() % narrative_encounters.size()
+				room.encounter_id = narrative_encounters[encounter_index]
 			else:
+				# Empty room
 				room.encounter_id = ""
 
-	# TESTING: Force second room to be shop
-	if TESTING_FORCE_SHOP_IN_SECOND_ROOM:
-		var start_room = rooms_dict.get("room_0_0")
-		if start_room:
-			# Find first connected room that isn't the boss room
-			for direction in ["north", "south", "east", "west"]:
-				var connected_room_id = start_room.connections[direction]
-				if connected_room_id != null and connected_room_id != exit_room_id:
-					rooms_dict[connected_room_id].encounter_id = "shop_encounter"
-					print("DungeonEngine: [TESTING] Forced %s to be shop encounter" % connected_room_id)
-					break
+	# Step 5: Ensure guaranteed shop placement (min 1, max 2)
+	# Count existing shops from random spawns
+	var shop_rooms = []
+	for room_id in rooms_dict.keys():
+		if rooms_dict[room_id].encounter_id == "shop_encounter":
+			shop_rooms.append(room_id)
+
+	# Get list of eligible rooms for shop placement (not start, not boss, not already shop)
+	var eligible_rooms = []
+	for room_id in rooms_dict.keys():
+		var room = rooms_dict[room_id]
+		if room_id != "room_0_0" and room_id != exit_room_id and room.encounter_id != "shop_encounter":
+			eligible_rooms.append(room_id)
+
+	# Ensure at least 1 shop
+	if shop_rooms.size() == 0 and eligible_rooms.size() > 0:
+		var random_room_id = eligible_rooms[randi() % eligible_rooms.size()]
+		rooms_dict[random_room_id].encounter_id = "shop_encounter"
+		shop_rooms.append(random_room_id)
+		eligible_rooms.erase(random_room_id)
+		print("DungeonEngine: Placed guaranteed shop in %s" % random_room_id)
+
+	# Optionally add a second shop (50% chance if we only have 1)
+	if shop_rooms.size() == 1 and eligible_rooms.size() > 0 and randf() < 0.5:
+		var random_room_id = eligible_rooms[randi() % eligible_rooms.size()]
+		rooms_dict[random_room_id].encounter_id = "shop_encounter"
+		shop_rooms.append(random_room_id)
+		print("DungeonEngine: Placed optional second shop in %s" % random_room_id)
+
+	# Cap at 2 shops maximum (remove extras if any)
+	if shop_rooms.size() > 2:
+		print("DungeonEngine: Warning - found %d shops, capping at 2" % shop_rooms.size())
+		for i in range(2, shop_rooms.size()):
+			rooms_dict[shop_rooms[i]].encounter_id = ""
+
+	print("DungeonEngine: Final shop count: %d" % min(shop_rooms.size(), 2))
 
 	# Initialize dungeon state via mutations
 	DungeonStateMutations.set_rooms(rooms_dict)

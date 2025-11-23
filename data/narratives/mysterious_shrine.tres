@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "mysterious_shrine"
+dialogue_text = "You discover a mysterious shrine glowing with an otherworldly light. Ancient mechanisms hum with power, and three pedestals stand before you, each marked with cryptic symbols.
+
+The left pedestal depicts a coiled spring - perhaps an offering?
+The center pedestal shows crossed swords - a challenge?
+The right pedestal displays a glowing aura - a blessing?"
+choices = Array[Dictionary]([{
+"outcome_type": "grant_item",
+"outcome_value": "energized_core_fragment",
+"text": "Touch the left pedestal (Offering)"
+}, {
+"outcome_type": "trigger_combat",
+"outcome_value": "single_goblin",
+"text": "Touch the center pedestal (Challenge)"
+}, {
+"outcome_type": "grant_passive",
+"outcome_value": "self_repair",
+"text": "Touch the right pedestal (Blessing)"
+}])

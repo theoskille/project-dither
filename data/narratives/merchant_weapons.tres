@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "merchant_weapons"
+dialogue_text = "The merchant pulls back their cloak, revealing an array of scavenged weaponry. 'Each piece has a story. Some stories end in blood.'"
+choices = Array[Dictionary]([{
+"outcome_type": "grant_item",
+"outcome_value": "dented_metal_blade",
+"text": "Take the dented blade (Free)"
+}, {
+"outcome_type": "end",
+"outcome_value": "",
+"text": "\"Maybe another time.\" (Leave)"
+}])
