@@ -195,6 +195,11 @@ func _build_stats_panel(parent: VBoxContainer):
 	spacer.custom_minimum_size = Vector2(0, 10)
 	stats_vbox.add_child(spacer)
 
+	# Current HP
+	var current_hp_label = Label.new()
+	current_hp_label.text = "CURRENT HP: %d / %d" % [PlayerStore.current_hp, total_max_hp]
+	stats_vbox.add_child(current_hp_label)
+
 	# Max HP
 	var hp_label = Label.new()
 	if total_max_hp != base_max_hp:

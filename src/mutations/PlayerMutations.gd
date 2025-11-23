@@ -178,7 +178,9 @@ func set_base_stats(new_stats: Dictionary):
 
 func set_current_hp(new_hp: int):
 	"""Set the player's current HP (clamped to 0 and max HP)"""
-	var max_hp = 100 + (PlayerStore.base_stats.get("con", 10) * 5)  # Base calculation, equipment bonuses handled elsewhere
+	# Get actual max HP including equipment bonuses from ItemEngine
+	var total_stats = ItemEngine.calculate_total_stats()
+	var max_hp = total_stats.get("max_hp", 100 + (PlayerStore.base_stats.get("con", 10) * 5))
 	var clamped_hp = clamp(new_hp, 0, max_hp)
 	var old_hp = PlayerStore.current_hp
 	PlayerStore.current_hp = clamped_hp
