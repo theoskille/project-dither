@@ -139,9 +139,42 @@ func _on_title_dev_mode_clicked():
 	print("Main: Title screen Dev Mode clicked")
 	_show_encounter_select_screen()
 
+func _reset_player_state_for_dev_mode():
+	"""Reset PlayerStore to a clean slate for dev mode configuration"""
+	print("Main: Resetting player state for dev mode")
+
+	# Clear all equipped attacks
+	for attack_id in PlayerStore.equipped_attacks.duplicate():
+		PlayerMutations.unequip_attack(attack_id)
+
+	# Clear all passive abilities
+	for passive_id in PlayerStore.passive_abilities.duplicate():
+		PlayerMutations.remove_passive_ability(passive_id)
+
+	# Clear all equipment
+	InventoryMutations.clear_all_equipment()
+
+	# Set base stats to a default for dev testing
+	PlayerMutations.set_base_stats({
+		"str": 10,
+		"dex": 10,
+		"int": 10,
+		"con": 10,
+		"spd": 10,
+		"luck": 10
+	})
+
+	# Set HP to a reasonable amount (will be recalculated on combat start)
+	PlayerMutations.set_current_hp(150)
+
+	print("Main: Player state reset complete")
+
 func _show_encounter_select_screen():
 	"""Display the encounter selection screen (dev mode)"""
 	print("Main: Showing encounter select screen")
+
+	# Reset player state for dev mode testing
+	_reset_player_state_for_dev_mode()
 
 	# Push encounter select screen onto stack
 	var encounter_select_screen = Control.new()
@@ -163,10 +196,8 @@ func _on_dev_encounter_selected(encounter_id: String):
 	"""Handle encounter selection from dev mode"""
 	print("Main: Dev mode encounter selected: %s" % encounter_id)
 
-	# Initialize player with brawler class
-	CharacterClassEngine.initialize_player_class("brawler")
-
-	# Switch directly to combat with selected encounter
+	# Player state is already configured by dev UI
+	# Just switch to combat - sync_player_from_store will handle the rest
 	_switch_to_combat_view(encounter_id)
 
 func _on_encounter_select_back():
