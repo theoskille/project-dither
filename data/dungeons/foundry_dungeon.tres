@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="DungeonData" load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://src/resources/DungeonData.gd" id="1_dungeon"]
+[ext_resource type="Script" path="res://src/resources/FloorData.gd" id="2_floor"]
+[ext_resource type="Script" path="res://src/resources/EncounterSpawnConfig.gd" id="3_spawn"]
+
+[sub_resource type="Resource" id="spawn_1_1"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_1_rust_mite"
+weight = 3.0
+
+[sub_resource type="Resource" id="spawn_1_2"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_2_slag_hauler"
+weight = 2.0
+
+[sub_resource type="Resource" id="spawn_1_3"]
+script = ExtResource("3_spawn")
+encounter_id = "narrative_forge_sentinel"
+weight = 1.0
+
+[sub_resource type="Resource" id="floor_1"]
+script = ExtResource("2_floor")
+floor_number = 1
+room_count = 3
+boss_encounter_id = "foundry_3_sentry_pair"
+available_encounters = [SubResource("spawn_1_1"), SubResource("spawn_1_2"), SubResource("spawn_1_3")]
+guaranteed_shop_count = 1
+
+[sub_resource type="Resource" id="spawn_2_1"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_3_sentry_pair"
+weight = 2.0
+
+[sub_resource type="Resource" id="spawn_2_2"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_4_molten_guard"
+weight = 3.0
+
+[sub_resource type="Resource" id="spawn_2_3"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_5_hauler_support"
+weight = 2.0
+
+[sub_resource type="Resource" id="spawn_2_4"]
+script = ExtResource("3_spawn")
+encounter_id = "narrative_memory_core"
+weight = 1.0
+
+[sub_resource type="Resource" id="floor_2"]
+script = ExtResource("2_floor")
+floor_number = 2
+room_count = 4
+boss_encounter_id = "foundry_6_sentry_squad"
+available_encounters = [SubResource("spawn_2_1"), SubResource("spawn_2_2"), SubResource("spawn_2_3"), SubResource("spawn_2_4")]
+guaranteed_shop_count = 1
+
+[sub_resource type="Resource" id="spawn_3_1"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_6_sentry_squad"
+weight = 1.0
+
+[sub_resource type="Resource" id="spawn_3_2"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_7_weaver_core"
+weight = 2.0
+
+[sub_resource type="Resource" id="spawn_3_3"]
+script = ExtResource("3_spawn")
+encounter_id = "foundry_8_forge_warden"
+weight = 3.0
+
+[sub_resource type="Resource" id="spawn_3_4"]
+script = ExtResource("3_spawn")
+encounter_id = "narrative_living_metal_pool"
+weight = 1.0
+
+[sub_resource type="Resource" id="floor_3"]
+script = ExtResource("2_floor")
+floor_number = 3
+room_count = 5
+boss_encounter_id = "foundry_9_foundry_heart"
+available_encounters = [SubResource("spawn_3_1"), SubResource("spawn_3_2"), SubResource("spawn_3_3"), SubResource("spawn_3_4")]
+guaranteed_shop_count = 2
+
+[resource]
+script = ExtResource("1_dungeon")
+dungeon_id = "foundry_dungeon"
+dungeon_name = "The Abandoned Foundry"
+floors = [SubResource("floor_1"), SubResource("floor_2"), SubResource("floor_3")]

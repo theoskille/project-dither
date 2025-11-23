@@ -10,6 +10,7 @@ var room_displays: Dictionary = {}  # room_id -> RoomDisplay instance
 var movement_buttons: Dictionary = {}  # direction -> Button instance
 var shop_button: Button = null  # Reference to dynamically shown shop button
 var button_grid: GridContainer = null  # Reference for rebuilding buttons
+var title_label: Label = null  # Reference to title label for floor updates
 
 func _ready():
 	# Set anchors to fill the screen
@@ -31,11 +32,11 @@ func _build_ui():
 	margin.add_child(main_vbox)
 
 	# Title
-	var title = Label.new()
-	title.text = "DUNGEON EXPLORATION"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.custom_minimum_size = Vector2(0, 48)
-	main_vbox.add_child(title)
+	title_label = Label.new()
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.custom_minimum_size = Vector2(0, 48)
+	_update_title()  # Set initial title with floor info
+	main_vbox.add_child(title_label)
 
 	# === DUNGEON MAP (Center) ===
 	var map_container = PanelContainer.new()
@@ -174,6 +175,27 @@ func _on_state_changed(property_path: String, _old_value, _new_value):
 	elif property_path == "visited_shops":
 		# Rebuild buttons when a shop is visited
 		_rebuild_control_buttons()
+	elif property_path == "current_floor":
+		# Update title when floor changes
+		_update_title()
+
+func _update_title():
+	"""Update title label with current floor information"""
+	var dungeon_id = DungeonStateStore.current_dungeon_id
+
+	if dungeon_id == "":
+		# Legacy mode: no floor info
+		title_label.text = "DUNGEON EXPLORATION"
+	else:
+		# Multi-floor mode: show floor progress
+		var current_floor = DungeonStateStore.current_floor
+		var dungeon_data = DungeonDatabase.get_dungeon(dungeon_id)
+		if dungeon_data:
+			var total_floors = dungeon_data.get_floor_count()
+			title_label.text = "DUNGEON EXPLORATION - Floor %d/%d" % [current_floor, total_floors]
+		else:
+			# Fallback if dungeon data not found
+			title_label.text = "DUNGEON EXPLORATION - Floor %d" % current_floor
 
 func _update_movement_buttons():
 	var valid_directions = DungeonEngine.get_valid_directions()

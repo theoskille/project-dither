@@ -23,6 +23,8 @@ class Room:
 		room_id = id
 
 # Dungeon state
+var current_dungeon_id: String = ""  # ID of the active dungeon
+var current_floor: int = 1  # Current floor number (1-indexed)
 var rooms: Dictionary = {}  # Dictionary of Room instances, keyed by room_id
 var current_room_id: String = ""
 

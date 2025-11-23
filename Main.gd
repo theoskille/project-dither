@@ -15,6 +15,7 @@ var combat_view: Control
 var shop_view: Control
 var narrative_view: Control
 var victory_screen: Control
+var floor_complete_screen: Control
 var dungeon_victory_screen: Control
 
 func _ready():
@@ -24,7 +25,8 @@ func _ready():
 
 	# Connect to engine signals
 	DungeonEngine.encounter_triggered.connect(_on_encounter_triggered)
-	DungeonEngine.boss_defeated.connect(_on_boss_defeated)
+	DungeonEngine.floor_completed.connect(_on_floor_completed)
+	DungeonEngine.dungeon_completed.connect(_on_dungeon_completed)
 	CombatEngine.victory_achieved.connect(_on_victory_achieved)
 	NarrativeEngine.combat_triggered_from_narrative.connect(_on_combat_triggered_from_narrative)
 
@@ -126,7 +128,7 @@ func _on_class_selected(class_id: String):
 	CharacterClassEngine.initialize_player_class(class_id)
 
 	# Start dungeon
-	DungeonEngine.start_dungeon()
+	DungeonEngine.start_dungeon("foundry_dungeon")
 
 	# Switch to dungeon view (clears stack)
 	_switch_to_dungeon_view()
@@ -371,8 +373,43 @@ func _on_victory_continue_pressed():
 	# Switch back to dungeon view
 	_switch_to_dungeon_view()
 
-func _on_boss_defeated():
-	print("Main: Boss defeated - showing dungeon victory screen")
+func _on_floor_completed(floor_number: int):
+	print("Main: Floor %d completed - showing floor complete screen" % floor_number)
+
+	# Get total floor count from dungeon data
+	var dungeon_id = DungeonStateStore.current_dungeon_id
+	var dungeon_data = DungeonDatabase.get_dungeon(dungeon_id)
+	var total_floors = dungeon_data.get_floor_count() if dungeon_data else floor_number + 1
+
+	# Create floor complete screen overlay with floor info
+	var FloorCompleteScreenScript = preload("res://src/ui/FloorCompleteScreen.gd")
+	floor_complete_screen = FloorCompleteScreenScript.new(floor_number, total_floors)
+	floor_complete_screen.anchor_right = 1.0
+	floor_complete_screen.anchor_bottom = 1.0
+
+	# Add to tree (this triggers _ready())
+	add_child(floor_complete_screen)
+
+	# Connect to descend button
+	floor_complete_screen.descend_pressed.connect(_on_floor_complete_descend_pressed)
+
+func _on_floor_complete_descend_pressed():
+	print("Main: Floor complete - descending to next floor")
+
+	# Remove floor complete screen
+	if floor_complete_screen:
+		remove_child(floor_complete_screen)
+		floor_complete_screen.queue_free()
+		floor_complete_screen = null
+
+	# Advance to next floor (DungeonEngine handles generation)
+	DungeonEngine.advance_to_next_floor()
+
+	# Switch back to dungeon view for exploration
+	_switch_to_dungeon_view()
+
+func _on_dungeon_completed():
+	print("Main: Dungeon completed - showing final victory screen")
 
 	# Create dungeon victory screen overlay
 	dungeon_victory_screen = Control.new()
@@ -397,7 +434,7 @@ func _on_dungeon_victory_main_menu_pressed():
 		dungeon_victory_screen = null
 
 	# Restart dungeon (in a real game, this would go to main menu)
-	DungeonEngine.start_dungeon()
+	DungeonEngine.start_dungeon("foundry_dungeon")
 	_switch_to_dungeon_view()
 
 func _on_dungeon_victory_continue_pressed():

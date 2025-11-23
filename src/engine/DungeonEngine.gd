@@ -7,41 +7,31 @@ extends Node
 signal encounter_triggered(encounter_id: String)
 signal dungeon_completed()
 signal boss_defeated()
+signal floor_completed(floor_number: int)  # Emitted when non-final floor boss defeated
 
 var _exit_room_id: String = ""  # Tracks the designated exit room
+var _current_dungeon_data: DungeonData = null  # Current dungeon being played
 
 # Generate a sparse grid-based maze dungeon (organic layout using grow-and-branch)
-func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float = 0.55):
+func generate_grid_dungeon(rows: int = 10, cols: int = 10, floor_data: FloorData = null):
 	var rooms_dict = {}
 
-	# Define encounter pools by type for fine-grained spawn control
-	var combat_encounters = [
-		"foundry_1_rust_mite",
-		"foundry_2_slag_hauler",
-		"foundry_3_sentry_pair",
-		"foundry_4_molten_guard",
-		"foundry_5_hauler_support",
-		"foundry_6_sentry_squad",
-		"foundry_7_weaver_core",
-		"foundry_8_forge_warden"
-	]
-	var shop_encounters = ["shop_encounter"]
-	var narrative_encounters = [
-		"narrative_forge_sentinel",
-		"narrative_memory_core",
-		"narrative_living_metal_pool",
-		"narrative_whispering_machinery"
-	]
+	# Use FloorData if provided, otherwise use legacy hardcoded values
+	var target_room_count: int
+	var boss_encounter: String
+	var guaranteed_shop_count: int
 
-	# Spawn probabilities for random encounters (shops are guaranteed separately)
-	var combat_chance = 0.65      # 65% chance for combat
-	var narrative_chance = 0.15   # 15% chance for narrative
-	var empty_chance = 0.20       # 20% chance for empty room
-	# Note: Shops are placed after random assignment (guaranteed 1, max 2)
+	if floor_data:
+		target_room_count = floor_data.room_count
+		boss_encounter = floor_data.boss_encounter_id
+		guaranteed_shop_count = floor_data.guaranteed_shop_count
+	else:
+		# Legacy hardcoded values
+		target_room_count = int(rows * cols * 0.55)
+		boss_encounter = "foundry_9_foundry_heart"
+		guaranteed_shop_count = 1
 
 	# Step 1: Grow dungeon organically using "grow-and-branch" algorithm
-	var total_positions = rows * cols
-	var target_room_count = int(total_positions * fill_percentage)
 	var selected_positions = {}
 	var frontier = []  # Positions we can potentially grow from
 
@@ -158,26 +148,38 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 			room.encounter_id = ""
 			room.room_type = "normal"
 		elif room_id == exit_room_id:  # Boss room (exit)
-			room.encounter_id = "foundry_9_foundry_heart"
+			room.encounter_id = boss_encounter
 			room.room_type = "boss"
 		else:
-			# Randomly assign encounter type based on probabilities (shops handled separately)
+			# Randomly assign encounter from weighted pool
 			room.room_type = "normal"
-			var roll = randf()
 
-			if roll < combat_chance:
-				# Combat encounter
-				var encounter_index = randi() % combat_encounters.size()
-				room.encounter_id = combat_encounters[encounter_index]
-			elif roll < combat_chance + narrative_chance:
-				# Narrative encounter
-				var encounter_index = randi() % narrative_encounters.size()
-				room.encounter_id = narrative_encounters[encounter_index]
+			if floor_data:
+				# Use FloorData weighted selection
+				room.encounter_id = floor_data.select_random_encounter()
 			else:
-				# Empty room
-				room.encounter_id = ""
+				# Legacy: Use hardcoded probabilities
+				var combat_encounters = [
+					"foundry_1_rust_mite", "foundry_2_slag_hauler", "foundry_3_sentry_pair",
+					"foundry_4_molten_guard", "foundry_5_hauler_support", "foundry_6_sentry_squad",
+					"foundry_7_weaver_core", "foundry_8_forge_warden"
+				]
+				var narrative_encounters = [
+					"narrative_forge_sentinel", "narrative_memory_core",
+					"narrative_living_metal_pool", "narrative_whispering_machinery"
+				]
+				var combat_chance = 0.65
+				var narrative_chance = 0.15
 
-	# Step 5: Ensure guaranteed shop placement (min 1, max 2)
+				var roll = randf()
+				if roll < combat_chance:
+					room.encounter_id = combat_encounters[randi() % combat_encounters.size()]
+				elif roll < combat_chance + narrative_chance:
+					room.encounter_id = narrative_encounters[randi() % narrative_encounters.size()]
+				else:
+					room.encounter_id = ""
+
+	# Step 5: Ensure guaranteed shop placement
 	# Count existing shops from random spawns
 	var shop_rooms = []
 	for room_id in rooms_dict.keys():
@@ -191,67 +193,85 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 		if room_id != "room_0_0" and room_id != exit_room_id and room.encounter_id != "shop_encounter":
 			eligible_rooms.append(room_id)
 
-	# Ensure at least 1 shop
-	if shop_rooms.size() == 0 and eligible_rooms.size() > 0:
+	# Place shops to meet guaranteed count
+	while shop_rooms.size() < guaranteed_shop_count and eligible_rooms.size() > 0:
 		var random_room_id = eligible_rooms[randi() % eligible_rooms.size()]
 		rooms_dict[random_room_id].encounter_id = "shop_encounter"
 		shop_rooms.append(random_room_id)
 		eligible_rooms.erase(random_room_id)
-		print("DungeonEngine: Placed guaranteed shop in %s" % random_room_id)
+		print("DungeonEngine: Placed shop %d/%d in %s" % [shop_rooms.size(), guaranteed_shop_count, random_room_id])
 
-	# Optionally add a second shop (50% chance if we only have 1)
-	if shop_rooms.size() == 1 and eligible_rooms.size() > 0 and randf() < 0.5:
-		var random_room_id = eligible_rooms[randi() % eligible_rooms.size()]
-		rooms_dict[random_room_id].encounter_id = "shop_encounter"
-		shop_rooms.append(random_room_id)
-		print("DungeonEngine: Placed optional second shop in %s" % random_room_id)
+	print("DungeonEngine: Final shop count: %d" % shop_rooms.size())
 
-	# Cap at 2 shops maximum (remove extras if any)
-	if shop_rooms.size() > 2:
-		print("DungeonEngine: Warning - found %d shops, capping at 2" % shop_rooms.size())
-		for i in range(2, shop_rooms.size()):
-			rooms_dict[shop_rooms[i]].encounter_id = ""
+	# Step 6: Guarantee narrative encounter in first adjacent room (legacy mode only)
+	if not floor_data:
+		var narrative_encounters = [
+			"narrative_forge_sentinel", "narrative_memory_core",
+			"narrative_living_metal_pool", "narrative_whispering_machinery"
+		]
+		var adjacent_positions = [
+			Vector2i(0, 1),   # South
+			Vector2i(0, -1),  # North
+			Vector2i(1, 0),   # East
+			Vector2i(-1, 0)   # West
+		]
 
-	print("DungeonEngine: Final shop count: %d" % min(shop_rooms.size(), 2))
+		var first_adjacent_room_id = ""
+		for adj_pos in adjacent_positions:
+			var potential_room_id = "room_%d_%d" % [adj_pos.y, adj_pos.x]
+			if rooms_dict.has(potential_room_id):
+				first_adjacent_room_id = potential_room_id
+				break
 
-	# Step 6: Guarantee narrative encounter in first adjacent room (second room - for testing)
-	var adjacent_positions = [
-		Vector2i(0, 1),   # South
-		Vector2i(0, -1),  # North
-		Vector2i(1, 0),   # East
-		Vector2i(-1, 0)   # West
-	]
-
-	var first_adjacent_room_id = ""
-	for adj_pos in adjacent_positions:
-		var potential_room_id = "room_%d_%d" % [adj_pos.y, adj_pos.x]
-		if rooms_dict.has(potential_room_id):
-			first_adjacent_room_id = potential_room_id
-			break
-
-	if first_adjacent_room_id != "":
-		var narrative_index = randi() % narrative_encounters.size()
-		rooms_dict[first_adjacent_room_id].encounter_id = narrative_encounters[narrative_index]
-		print("DungeonEngine: Guaranteed narrative '%s' in second room '%s'" % [narrative_encounters[narrative_index], first_adjacent_room_id])
+		if first_adjacent_room_id != "":
+			var narrative_index = randi() % narrative_encounters.size()
+			rooms_dict[first_adjacent_room_id].encounter_id = narrative_encounters[narrative_index]
+			print("DungeonEngine: Guaranteed narrative '%s' in second room '%s'" % [narrative_encounters[narrative_index], first_adjacent_room_id])
 
 	# Initialize dungeon state via mutations
 	DungeonStateMutations.set_rooms(rooms_dict)
 	DungeonStateMutations.set_current_room("room_0_0")
 	DungeonStateMutations.mark_room_visited("room_0_0")
 
+	var fill_percentage = float(rooms_dict.size()) / (rows * cols)
 	print("DungeonEngine: Generated %dx%d sparse maze (%d rooms, %.0f%% filled)" % [rows, cols, rooms_dict.size(), fill_percentage * 100])
-	print("DungeonEngine: Exit room at %s" % exit_room_id)
+	print("DungeonEngine: Exit room at %s with boss: %s" % [exit_room_id, boss_encounter])
 	_print_dungeon_layout()
 
 	# Store exit room for completion check
 	_exit_room_id = exit_room_id
 
-# Start a new dungeon
-func start_dungeon():
+# Start a new dungeon from DungeonData
+func start_dungeon(dungeon_id: String = ""):
 	# Reset player progression (level and XP) for new dungeon run
 	PlayerMutations.reset_progression()
 
-	generate_grid_dungeon(10, 10, 0.55)  # 10x10 grid, 55% filled (organic layout)
+	if dungeon_id == "":
+		# Legacy mode: generate without DungeonData
+		print("DungeonEngine: Starting dungeon in legacy mode (no DungeonData)")
+		generate_grid_dungeon(10, 10, null)
+	else:
+		# Load dungeon data
+		_current_dungeon_data = DungeonDatabase.get_dungeon(dungeon_id)
+
+		if not _current_dungeon_data:
+			push_error("DungeonEngine: Failed to load dungeon '%s'" % dungeon_id)
+			return
+
+		print("DungeonEngine: Starting dungeon '%s' with %d floors" % [_current_dungeon_data.dungeon_name, _current_dungeon_data.get_floor_count()])
+
+		# Initialize dungeon state
+		DungeonStateMutations.set_current_dungeon(dungeon_id)
+		DungeonStateMutations.set_current_floor(1)
+
+		# Generate first floor
+		var first_floor = _current_dungeon_data.get_floor(1)
+		if first_floor:
+			generate_grid_dungeon(10, 10, first_floor)
+			print("DungeonEngine: Generated floor 1/%d" % _current_dungeon_data.get_floor_count())
+		else:
+			push_error("DungeonEngine: Failed to get floor 1 data")
+
 	print("DungeonEngine: Dungeon started at room_0_0")
 
 # Move player in a direction
@@ -319,6 +339,51 @@ func is_current_room_boss() -> bool:
 func notify_boss_defeated():
 	print("DungeonEngine: Boss defeated!")
 	boss_defeated.emit()
+
+	# Check if this is the final floor
+	if is_final_floor():
+		print("DungeonEngine: Final boss defeated - dungeon complete!")
+		dungeon_completed.emit()
+	else:
+		var current_floor = DungeonStateStore.current_floor
+		print("DungeonEngine: Floor %d boss defeated!" % current_floor)
+		floor_completed.emit(current_floor)
+
+# Check if currently on the final floor of the dungeon
+func is_final_floor() -> bool:
+	if not _current_dungeon_data:
+		return true  # Legacy mode: always final floor
+
+	return _current_dungeon_data.is_final_floor(DungeonStateStore.current_floor)
+
+# Advance to the next floor (called after floor boss defeated)
+func advance_to_next_floor():
+	if not _current_dungeon_data:
+		push_error("DungeonEngine: Cannot advance floor - no dungeon data loaded")
+		return
+
+	var current_floor = DungeonStateStore.current_floor
+	var next_floor_num = current_floor + 1
+
+	if next_floor_num > _current_dungeon_data.get_floor_count():
+		push_error("DungeonEngine: Cannot advance - already on final floor")
+		return
+
+	print("DungeonEngine: Advancing from floor %d to floor %d" % [current_floor, next_floor_num])
+
+	# Update floor number
+	DungeonStateMutations.set_current_floor(next_floor_num)
+
+	# Reset floor-specific state (preserves HP, scrap, inventory)
+	DungeonStateMutations.reset_floor_state()
+
+	# Generate new floor
+	var next_floor_data = _current_dungeon_data.get_floor(next_floor_num)
+	if next_floor_data:
+		generate_grid_dungeon(10, 10, next_floor_data)
+		print("DungeonEngine: Generated floor %d/%d (%d rooms)" % [next_floor_num, _current_dungeon_data.get_floor_count(), next_floor_data.room_count])
+	else:
+		push_error("DungeonEngine: Failed to get floor %d data" % next_floor_num)
 
 # Debug: Print dungeon layout
 func _print_dungeon_layout():

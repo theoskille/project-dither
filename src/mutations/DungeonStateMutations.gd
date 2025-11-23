@@ -75,3 +75,30 @@ func increment_rooms_cleared():
 	var old_value = DungeonStateStore.rooms_cleared
 	DungeonStateStore.rooms_cleared += 1
 	DungeonStateStore._emit_change("rooms_cleared", old_value, DungeonStateStore.rooms_cleared)
+
+# Set the current dungeon ID
+func set_current_dungeon(dungeon_id: String):
+	var old_dungeon_id = DungeonStateStore.current_dungeon_id
+	DungeonStateStore.current_dungeon_id = dungeon_id
+	DungeonStateStore._emit_change("current_dungeon_id", old_dungeon_id, dungeon_id)
+
+# Set the current floor number
+func set_current_floor(floor_num: int):
+	var old_floor = DungeonStateStore.current_floor
+	DungeonStateStore.current_floor = floor_num
+	DungeonStateStore._emit_change("current_floor", old_floor, floor_num)
+
+# Reset floor-specific state for new floor generation
+# Clears rooms, current_room_id, visited_shops but preserves dungeon_id and floor number
+func reset_floor_state():
+	var old_rooms = DungeonStateStore.rooms
+	var old_current_room = DungeonStateStore.current_room_id
+	var old_visited_shops = DungeonStateStore.visited_shops
+
+	DungeonStateStore.rooms = {}
+	DungeonStateStore.current_room_id = ""
+	DungeonStateStore.visited_shops = []
+
+	DungeonStateStore._emit_change("rooms", old_rooms, {})
+	DungeonStateStore._emit_change("current_room_id", old_current_room, "")
+	DungeonStateStore._emit_change("visited_shops", old_visited_shops, [])
