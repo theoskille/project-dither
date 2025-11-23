@@ -137,6 +137,17 @@ func add_passive_ability(passive_id: String):
 	PlayerStore._emit_change("passive_abilities", old_passives, PlayerStore.passive_abilities)
 	print("PlayerMutations: Added passive ability '%s'" % passive_id)
 
+func remove_passive_ability(passive_id: String):
+	"""Remove a passive ability from the player"""
+	if not passive_id in PlayerStore.passive_abilities:
+		push_warning("PlayerMutations: Passive '%s' is not active" % passive_id)
+		return
+
+	var old_passives = PlayerStore.passive_abilities.duplicate()
+	PlayerStore.passive_abilities.erase(passive_id)
+	PlayerStore._emit_change("passive_abilities", old_passives, PlayerStore.passive_abilities)
+	print("PlayerMutations: Removed passive ability '%s'" % passive_id)
+
 func reset_progression():
 	# Reset level to 1
 	var old_level = PlayerStore.level
@@ -164,3 +175,16 @@ func set_base_stats(new_stats: Dictionary):
 	PlayerStore.base_stats = new_stats.duplicate()
 	PlayerStore._emit_change("base_stats", old_stats, PlayerStore.base_stats)
 	print("PlayerMutations: Set base stats to %s" % PlayerStore.base_stats)
+
+func set_current_hp(new_hp: int):
+	"""Set the player's current HP (clamped to 0 and max HP)"""
+	var max_hp = 100 + (PlayerStore.base_stats.get("con", 10) * 5)  # Base calculation, equipment bonuses handled elsewhere
+	var clamped_hp = clamp(new_hp, 0, max_hp)
+	var old_hp = PlayerStore.current_hp
+	PlayerStore.current_hp = clamped_hp
+	PlayerStore._emit_change("current_hp", old_hp, clamped_hp)
+	print("PlayerMutations: Set current HP to %d (max: %d)" % [clamped_hp, max_hp])
+
+func heal_hp(amount: int):
+	"""Heal the player by the specified amount"""
+	set_current_hp(PlayerStore.current_hp + amount)

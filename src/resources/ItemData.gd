@@ -12,7 +12,8 @@ class_name ItemData
 enum ItemType {
 	WEAPON,
 	ARMOR,
-	ACCESSORY
+	ACCESSORY,
+	CONSUMABLE
 }
 @export var item_type: ItemType = ItemType.ACCESSORY
 
@@ -56,6 +57,15 @@ enum Rarity {
 @export_range(0, 100) var percent_max_hp_bonus: int = 0
 @export_range(0, 100) var percent_max_vigor_bonus: int = 0
 
+# Passive ability granted when equipped (for equipment items)
+@export_group("Passive Ability")
+@export var grants_passive_id: String = ""
+
+# Consumable effects (for consumable items only)
+@export_group("Consumable Effects")
+@export var heal_amount: int = 0
+@export var vigor_restore: int = 0
+
 # Validation
 func _validate_property(property: Dictionary) -> void:
 	if property.name == "item_id":
@@ -71,6 +81,8 @@ func get_item_type_string() -> String:
 			return "armor"
 		ItemType.ACCESSORY:
 			return "accessory"
+		ItemType.CONSUMABLE:
+			return "consumable"
 	return ""
 
 # Helper to get rarity as string for UI display
@@ -127,5 +139,16 @@ func get_bonus_description() -> String:
 		bonuses.append("+%d%% Max HP" % percent_max_hp_bonus)
 	if percent_max_vigor_bonus != 0:
 		bonuses.append("+%d%% Max Vigor" % percent_max_vigor_bonus)
+
+	# Passive ability grant
+	if grants_passive_id != "":
+		var passive_name = grants_passive_id.replace("_", " ").capitalize()
+		bonuses.append("Grants: %s" % passive_name)
+
+	# Consumable effects
+	if heal_amount > 0:
+		bonuses.append("Restores %d HP" % heal_amount)
+	if vigor_restore > 0:
+		bonuses.append("Restores %d Vigor" % vigor_restore)
 
 	return ", ".join(bonuses) if bonuses.size() > 0 else "No bonuses"

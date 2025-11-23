@@ -53,7 +53,7 @@ func _ready():
 
 	# Add starter items to inventory for testing
 	if inventory.size() == 0:
-		inventory = ["iron_sword", "leather_armor", "swift_ring", "ruby_amulet", "scholar_glasses"]
+		inventory = ["dented_metal_blade", "rusted_plating", "tarnished_gear", "repair_fluid", "repair_fluid"]
 		print("PlayerStore: Initialized with starter items: %s" % inventory)
 
 ## Calculate max vigor based on player level

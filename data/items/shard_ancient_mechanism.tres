@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_shard"]
+
+[resource]
+script = ExtResource("1_shard")
+item_id = "shard_ancient_mechanism"
+item_name = "Shard of the Ancient Mechanism"
+description = "A fragment of powerful clockwork that still pulses with energy"
+item_type = 2
+rarity = 2
+sprite_path = ""
+shop_price = 100
+str_bonus = 5
+dex_bonus = 5
+int_bonus = 5
+con_bonus = 5
+spd_bonus = 5
+luck_bonus = 5
+percent_str_bonus = 0
+percent_dex_bonus = 0
+percent_int_bonus = 0
+percent_con_bonus = 0
+percent_spd_bonus = 0
+percent_luck_bonus = 0
+max_hp_bonus = 0
+max_vigor_bonus = 0
+percent_max_hp_bonus = 10
+percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 0
+vigor_restore = 0

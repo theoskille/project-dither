@@ -1,22 +1,22 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_scholar_glasses"]
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_cracked_lens"]
 
 [resource]
-script = ExtResource("1_scholar_glasses")
-item_id = "scholar_glasses"
-item_name = "Scholar's Glasses"
-description = "Enchanted spectacles that sharpen the mind and enhance magical prowess."
+script = ExtResource("1_cracked_lens")
+item_id = "cracked_lens"
+item_name = "Cracked Lens"
+description = "Broken glass from an ancient construct's eye"
 item_type = 2
 rarity = 1
 sprite_path = ""
-shop_price = 50
+shop_price = 30
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 4
 con_bonus = 0
 spd_bonus = 0
-luck_bonus = 0
+luck_bonus = 2
 percent_str_bonus = 0
 percent_dex_bonus = 0
 percent_int_bonus = 0
@@ -27,3 +27,6 @@ max_hp_bonus = 0
 max_vigor_bonus = 0
 percent_max_hp_bonus = 0
 percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 0
+vigor_restore = 0

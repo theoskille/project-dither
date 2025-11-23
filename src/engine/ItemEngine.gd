@@ -97,8 +97,12 @@ func equip_item(item_id: String) -> bool:
 	# Remove from inventory
 	InventoryMutations.remove_item_from_inventory(item_id)
 
-	# If swapping, return old item to inventory
+	# If swapping, return old item to inventory and remove its passive
 	if check.swap_needed and check.old_item != "":
+		var old_item = ItemDatabase.get_item(check.old_item)
+		if old_item and old_item.grants_passive_id != "":
+			PlayerMutations.remove_passive_ability(old_item.grants_passive_id)
+			print("ItemEngine: Removed passive ability '%s' from '%s'" % [old_item.grants_passive_id, check.old_item])
 		InventoryMutations.add_item_to_inventory(check.old_item)
 
 	# Equip in appropriate slot
@@ -114,6 +118,11 @@ func equip_item(item_id: String) -> bool:
 			var slot_parts = check.slot.split("_")
 			var slot_index = int(slot_parts[1]) if slot_parts.size() > 1 else 0
 			InventoryMutations.equip_accessory(item_id, slot_index)
+
+	# Grant passive ability if item provides one
+	if item.grants_passive_id != "":
+		PlayerMutations.add_passive_ability(item.grants_passive_id)
+		print("ItemEngine: Granted passive ability '%s' from '%s'" % [item.grants_passive_id, item_id])
 
 	print("ItemEngine: Successfully equipped '%s' in slot '%s'" % [item_id, check.slot])
 	return true
@@ -158,6 +167,12 @@ func unequip_item_by_slot(slot: String) -> bool:
 	else:
 		push_error("ItemEngine: Invalid slot '%s'" % slot)
 		return false
+
+	# Remove passive ability if item granted one
+	var item = ItemDatabase.get_item(item_id)
+	if item and item.grants_passive_id != "":
+		PlayerMutations.remove_passive_ability(item.grants_passive_id)
+		print("ItemEngine: Removed passive ability '%s' from '%s'" % [item.grants_passive_id, item_id])
 
 	# Add back to inventory
 	InventoryMutations.add_item_to_inventory(item_id)
@@ -270,3 +285,49 @@ func get_all_equipped_items() -> Array[String]:
 			equipped.append(accessory_id)
 
 	return equipped
+
+func use_consumable(item_id: String, in_battle: bool = false) -> bool:
+	"""
+	Use a consumable item from inventory
+	- in_battle: If true, affects battle state. If false, affects persistent player HP
+	Returns true if successful, false otherwise
+	"""
+	# Check if item is in inventory
+	if not item_id in PlayerStore.inventory:
+		push_warning("ItemEngine: Cannot use '%s' - not in inventory" % item_id)
+		return false
+
+	var item = ItemDatabase.get_item(item_id)
+	if not item:
+		push_error("ItemEngine: Item '%s' not found in database" % item_id)
+		return false
+
+	# Verify it's a consumable
+	if item.item_type != ItemData.ItemType.CONSUMABLE:
+		push_error("ItemEngine: Item '%s' is not a consumable" % item_id)
+		return false
+
+	# Apply effects based on context
+	if in_battle:
+		# During battle: restore HP and vigor to battle state
+		if item.heal_amount > 0:
+			BattleStateMutations.heal_entity("player", item.heal_amount)
+			print("ItemEngine: Restored %d HP to player in battle" % item.heal_amount)
+
+		if item.vigor_restore > 0:
+			BattleStateMutations.restore_vigor("player", item.vigor_restore)
+			print("ItemEngine: Restored %d Vigor to player in battle" % item.vigor_restore)
+	else:
+		# Outside battle: restore persistent HP only (vigor doesn't exist outside battle)
+		if item.heal_amount > 0:
+			PlayerMutations.heal_hp(item.heal_amount)
+			print("ItemEngine: Restored %d HP to player" % item.heal_amount)
+
+		if item.vigor_restore > 0:
+			print("ItemEngine: Cannot restore vigor outside of battle")
+
+	# Consume the item (remove from inventory)
+	InventoryMutations.consume_item(item_id)
+
+	print("ItemEngine: Successfully used consumable '%s'" % item_id)
+	return true

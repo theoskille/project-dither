@@ -1,20 +1,20 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_leather_armor"]
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_rusted_plating"]
 
 [resource]
-script = ExtResource("1_leather_armor")
-item_id = "leather_armor"
-item_name = "Leather Armor"
-description = "Light protective gear made from cured leather. Provides good defense without hindering movement."
+script = ExtResource("1_rusted_plating")
+item_id = "rusted_plating"
+item_name = "Rusted Plating"
+description = "Scrap metal plates barely held together"
 item_type = 1
 rarity = 0
 sprite_path = ""
-shop_price = 25
+shop_price = 20
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 0
-con_bonus = 5
+con_bonus = 4
 spd_bonus = 0
 luck_bonus = 0
 percent_str_bonus = 0
@@ -23,7 +23,10 @@ percent_int_bonus = 0
 percent_con_bonus = 0
 percent_spd_bonus = 0
 percent_luck_bonus = 0
-max_hp_bonus = 0
+max_hp_bonus = 15
 max_vigor_bonus = 0
 percent_max_hp_bonus = 0
 percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 0
+vigor_restore = 0

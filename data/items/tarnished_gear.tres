@@ -1,21 +1,21 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_iron_sword"]
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_tarnished_gear"]
 
 [resource]
-script = ExtResource("1_iron_sword")
-item_id = "iron_sword"
-item_name = "Iron Sword"
-description = "A sturdy blade forged from iron. Reliable in combat."
-item_type = 0
+script = ExtResource("1_tarnished_gear")
+item_id = "tarnished_gear"
+item_name = "Tarnished Gear"
+description = "A small rusted gear with no obvious purpose"
+item_type = 2
 rarity = 0
 sprite_path = ""
-shop_price = 25
-str_bonus = 3
+shop_price = 10
+str_bonus = 0
 dex_bonus = 0
 int_bonus = 0
 con_bonus = 0
-spd_bonus = 0
+spd_bonus = 2
 luck_bonus = 0
 percent_str_bonus = 0
 percent_dex_bonus = 0
@@ -27,3 +27,6 @@ max_hp_bonus = 0
 max_vigor_bonus = 0
 percent_max_hp_bonus = 0
 percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 0
+vigor_restore = 0

@@ -117,3 +117,15 @@ func clear_all_equipment():
 	PlayerStore._emit_change("equipped_accessories", old_accessories, PlayerStore.equipped_accessories)
 
 	print("InventoryMutations: Cleared all equipment")
+
+func consume_item(item_id: String):
+	"""Consume an item (remove from inventory after use)"""
+	if not item_id in PlayerStore.inventory:
+		push_warning("InventoryMutations: Item '%s' is not in inventory to consume" % item_id)
+		return
+
+	var old_inventory = PlayerStore.inventory.duplicate()
+	PlayerStore.inventory.erase(item_id)
+	PlayerStore._emit_change("inventory", old_inventory, PlayerStore.inventory)
+	PlayerStore.item_removed.emit(item_id)
+	print("InventoryMutations: Consumed item '%s' (total items: %d)" % [item_id, PlayerStore.inventory.size()])

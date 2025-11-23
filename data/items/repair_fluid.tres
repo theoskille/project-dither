@@ -1,16 +1,16 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_ruby_amulet"]
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_repair_fluid"]
 
 [resource]
-script = ExtResource("1_ruby_amulet")
-item_id = "ruby_amulet"
-item_name = "Ruby Amulet"
-description = "A radiant amulet containing a flawless ruby. Infuses the wearer with vitality."
-item_type = 2
-rarity = 2
+script = ExtResource("1_repair_fluid")
+item_id = "repair_fluid"
+item_name = "Repair Fluid"
+description = "Viscous liquid that seals wounds"
+item_type = 3
+rarity = 0
 sprite_path = ""
-shop_price = 100
+shop_price = 20
 str_bonus = 0
 dex_bonus = 0
 int_bonus = 0
@@ -25,5 +25,8 @@ percent_spd_bonus = 0
 percent_luck_bonus = 0
 max_hp_bonus = 0
 max_vigor_bonus = 0
-percent_max_hp_bonus = 10
+percent_max_hp_bonus = 0
 percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 40
+vigor_restore = 0

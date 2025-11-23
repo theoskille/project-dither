@@ -958,12 +958,16 @@ func _update_item_detail_panel():
 	status_label.add_theme_font_size_override("font_size", 16)
 	item_detail_info_vbox.add_child(status_label)
 
-	# Equip/Unequip button
+	# Button (Equip/Unequip/Use depending on item type)
 	var button = Button.new()
 	button.custom_minimum_size = Vector2(200, 50)
 	button.add_theme_font_size_override("font_size", 16)
 
-	if is_equipped:
+	# Check if item is a consumable
+	if item.item_type == ItemData.ItemType.CONSUMABLE:
+		button.text = "USE"
+		button.pressed.connect(func(): _on_use_consumable_pressed(selected_item_id))
+	elif is_equipped:
 		button.text = "UNEQUIP"
 		button.pressed.connect(func(): _on_unequip_item_pressed(equipped_slot))
 	else:
@@ -1003,6 +1007,12 @@ func _on_unequip_item_pressed(slot: String):
 	"""Handle unequip button press"""
 	if ItemEngine.unequip_item_by_slot(slot):
 		selected_item_id = ""  # Clear selection after unequipping
+		_switch_tab(Tab.ITEMS)  # Refresh UI
+
+func _on_use_consumable_pressed(item_id: String):
+	"""Handle use consumable button press"""
+	if ItemEngine.use_consumable(item_id, false):  # false = not in battle
+		selected_item_id = ""  # Clear selection after using
 		_switch_tab(Tab.ITEMS)  # Refresh UI
 
 func _on_back_button_pressed():

@@ -1,18 +1,18 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_steel_blade"]
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_dented_blade"]
 
 [resource]
-script = ExtResource("1_steel_blade")
-item_id = "steel_blade"
-item_name = "Steel Blade"
-description = "A finely crafted blade made from tempered steel. Cuts through enemies with precision."
+script = ExtResource("1_dented_blade")
+item_id = "dented_metal_blade"
+item_name = "Dented Metal Blade"
+description = "A worn blade found in the foundry ruins"
 item_type = 0
-rarity = 1
+rarity = 0
 sprite_path = ""
-shop_price = 50
-str_bonus = 5
-dex_bonus = 2
+shop_price = 15
+str_bonus = 3
+dex_bonus = 0
 int_bonus = 0
 con_bonus = 0
 spd_bonus = 0
@@ -27,3 +27,6 @@ max_hp_bonus = 0
 max_vigor_bonus = 0
 percent_max_hp_bonus = 0
 percent_max_vigor_bonus = 0
+grants_passive_id = ""
+heal_amount = 0
+vigor_restore = 0

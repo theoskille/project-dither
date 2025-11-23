@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/ItemData.gd" id="1_greathammer"]
+
+[resource]
+script = ExtResource("1_greathammer")
+item_id = "wardens_eternal_greathammer"
+item_name = "Warden's Eternal Greathammer"
+description = "The Forge Warden's weapon, still burning with ancient fury"
+item_type = 0
+rarity = 3
+sprite_path = ""
+shop_price = 500
+str_bonus = 10
+dex_bonus = 0
+int_bonus = 0
+con_bonus = 8
+spd_bonus = 0
+luck_bonus = 0
+percent_str_bonus = 0
+percent_dex_bonus = 0
+percent_int_bonus = 0
+percent_con_bonus = 0
+percent_spd_bonus = 0
+percent_luck_bonus = 0
+max_hp_bonus = 0
+max_vigor_bonus = 1
+percent_max_hp_bonus = 15
+percent_max_vigor_bonus = 0
+grants_passive_id = "molten_aura"
+heal_amount = 0
+vigor_restore = 0
