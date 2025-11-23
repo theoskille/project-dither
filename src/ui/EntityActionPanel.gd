@@ -90,6 +90,32 @@ func _rebuild_action_buttons():
 		insert_index += 1
 		action_buttons.append(button)
 
+func _is_action_usable_against_any_target(action_data: ActionData) -> bool:
+	# Get potential targets based on who this entity is
+	var potential_targets: Array[String] = []
+
+	if entity_name == "player":
+		# Player can target all enemies
+		var enemies = BattleStateStore.battle_state.enemies
+		for i in range(enemies.size()):
+			potential_targets.append("enemy_%d" % i)
+	else:
+		# Enemies can target player and other enemies
+		potential_targets.append("player")
+		var enemies = BattleStateStore.battle_state.enemies
+		for i in range(enemies.size()):
+			var enemy_id = "enemy_%d" % i
+			if enemy_id != entity_name:  # Don't target self (unless action targets self)
+				potential_targets.append(enemy_id)
+
+	# Check if action can be used against at least one target
+	for target_id in potential_targets:
+		var distance = CombatEngine._get_distance_between_entities(entity_name, target_id)
+		if distance >= action_data.min_range and distance <= action_data.max_range:
+			return true  # Found at least one valid target
+
+	return false  # No valid targets in range
+
 func _update_buttons():
 	var current_entity = CombatEngine._get_current_turn_entity()
 	var is_my_turn = (current_entity == entity_name)
@@ -129,14 +155,17 @@ func _update_buttons():
 				var is_on_cooldown = active_cooldowns.has(action_id)
 				var cooldown_remaining = active_cooldowns.get(action_id, 0)
 
+				# Check if action has any valid targets in range
+				var is_in_range = _is_action_usable_against_any_target(action)
+
 				# Update button text to show cooldown or range
 				if is_on_cooldown:
 					button.text = "%s (Cooldown: %d)" % [action.action_name, cooldown_remaining]
 				else:
 					button.text = "%s (Range %d-%d)" % [action.action_name, action.min_range, action.max_range]
 
-				# Disable if not player's turn, insufficient vigor, or on cooldown
-				button.disabled = not is_my_turn or current_vigor < action.vigor_cost or is_on_cooldown
+				# Disable if not player's turn, insufficient vigor, on cooldown, or no valid targets in range
+				button.disabled = not is_my_turn or current_vigor < action.vigor_cost or is_on_cooldown or not is_in_range
 			else:
 				button.disabled = true
 		else:
