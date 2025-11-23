@@ -110,14 +110,20 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 	# Move caster if specified
 	if action_data.move_caster != 0:
 		var caster_entity = _get_entity_by_id(caster_id)
+		var target_entity = _get_entity_by_id(target_id)
 		if caster_entity:
+			# Get target position if available (for directional movement like dash_strike)
+			var target_pos = target_entity.position if target_entity else -1
+
 			# Use MovementEngine to resolve movement
 			var movement_result = MovementEngine.resolve_movement(
 				caster_id,
 				action_data.movement_type,
 				caster_entity.position,
 				action_data.move_caster,
-				max_position
+				max_position,
+				target_pos,
+				action_data.stop_on_collision
 			)
 
 			var new_pos = movement_result.final_position
@@ -283,7 +289,9 @@ func can_execute_action(action_data: ActionData, caster_id: String, target_id: S
 
 	# Check if caster movement is blocked
 	if action_data.move_caster != 0:
-		if not MovementEngine.validate_movement(caster_id, action_data.movement_type, caster_entity.position, action_data.move_caster):
+		var target_entity = _get_entity_by_id(target_id)
+		var target_pos = target_entity.position if target_entity else -1
+		if not MovementEngine.validate_movement(caster_id, action_data.movement_type, caster_entity.position, action_data.move_caster, target_pos):
 			print("CombatEngine: %s cannot move - blocked" % caster_id)
 			return false
 

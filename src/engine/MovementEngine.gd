@@ -4,11 +4,22 @@ extends Node
 ## Part of the Engine Layer: contains movement logic and rules
 
 ## Validates if a movement is legal (checks sentinel blocking and other rules)
-func validate_movement(entity_id: String, movement_type: String, start_pos: int, distance: int) -> bool:
+## target_position: Optional. If provided, calculates end position based on direction toward target
+func validate_movement(entity_id: String, movement_type: String, start_pos: int, distance: int, target_position: int = -1) -> bool:
 	if distance == 0:
 		return true
 
-	var end_pos = start_pos + distance
+	var end_pos: int
+
+	# Calculate end position (same logic as resolve_movement)
+	if target_position >= 0:
+		var direction = sign(target_position - start_pos)
+		if direction == 0:
+			end_pos = start_pos + distance
+		else:
+			end_pos = start_pos + (abs(distance) * direction)
+	else:
+		end_pos = start_pos + distance
 
 	# Check movement type specific rules
 	match movement_type:
@@ -27,21 +38,53 @@ func validate_movement(entity_id: String, movement_type: String, start_pos: int,
 
 ## Resolves movement and returns final position and any entity encountered
 ## Returns: {final_position: int, hit_entity: String}
-func resolve_movement(entity_id: String, movement_type: String, start_pos: int, distance: int, max_position: int) -> Dictionary:
+## target_position: Optional. If provided, movement direction is calculated toward target
+## stop_on_collision: If true, movement stops at first entity encountered along the path
+func resolve_movement(entity_id: String, movement_type: String, start_pos: int, distance: int, max_position: int, target_position: int = -1, stop_on_collision: bool = false) -> Dictionary:
 	if distance == 0:
 		return {
 			"final_position": start_pos,
 			"hit_entity": ""
 		}
 
-	var end_pos = clamp(start_pos + distance, 0, max_position)
+	var intended_end_pos: int
+
+	# If target position is provided, calculate direction toward target
+	if target_position >= 0:
+		var direction = sign(target_position - start_pos)
+		# If already at target position or target is invalid, use raw distance
+		if direction == 0:
+			intended_end_pos = clamp(start_pos + distance, 0, max_position)
+		else:
+			# Move toward target: apply absolute distance in target direction
+			intended_end_pos = clamp(start_pos + (abs(distance) * direction), 0, max_position)
+	else:
+		# No target specified - use raw distance (positive = right, negative = left)
+		intended_end_pos = clamp(start_pos + distance, 0, max_position)
+
+	var final_pos = intended_end_pos
 	var hit_entity = ""
 
-	# Check if there's an entity at the final position
-	hit_entity = _find_entity_at_position(entity_id, end_pos)
+	# If stop_on_collision is true, check each tile along the path
+	if stop_on_collision:
+		var direction = sign(intended_end_pos - start_pos)
+		var current_pos = start_pos
+
+		# Scan each tile along the path
+		while current_pos != intended_end_pos:
+			current_pos += direction
+			var entity_at_pos = _find_entity_at_position(entity_id, current_pos)
+			if entity_at_pos != "":
+				# Found an entity - stop here
+				final_pos = current_pos
+				hit_entity = entity_at_pos
+				break
+	else:
+		# Only check final destination
+		hit_entity = _find_entity_at_position(entity_id, intended_end_pos)
 
 	return {
-		"final_position": end_pos,
+		"final_position": final_pos,
 		"hit_entity": hit_entity
 	}
 
