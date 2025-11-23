@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "forge_sentinel"
+dialogue_text = "A massive construct stands motionless in the corridor, its metal chassis fused with pulsing veins of organic material. Red lights flicker behind dormant optical sensors. Ancient mechanisms hum softly within its core - it could be reactivated, or its valuable components could be salvaged."
+choices = Array[Dictionary]([{
+"outcome_type": "trigger_combat",
+"outcome_value": "foundry_3_sentry_pair",
+"text": "Reactivate the sentinel (Challenge)"
+}, {
+"outcome_type": "grant_item",
+"outcome_value": "rusted_plating",
+"text": "Carefully salvage components"
+}, {
+"outcome_type": "end",
+"outcome_value": "",
+"text": "Leave it dormant (Leave)"
+}])

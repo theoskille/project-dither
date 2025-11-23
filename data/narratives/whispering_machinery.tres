@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "whispering_machinery"
+dialogue_text = "The walls themselves seem to breathe here - pipes of flesh intertwined with corroded metal conduits. Mechanical whispers echo through the chamber in a language long forgotten. The machinery warns of danger ahead... or perhaps offers power to those bold enough to demand it. You sense this ancient intelligence could be reasoned with."
+choices = Array[Dictionary]([{
+"outcome_type": "grant_passive",
+"outcome_value": "molten_aura",
+"text": "Heed the warnings, accept its gift"
+}, {
+"outcome_type": "trigger_combat",
+"outcome_value": "foundry_4_molten_guard",
+"text": "Demand greater power (Challenge)"
+}, {
+"outcome_type": "end",
+"outcome_value": "",
+"text": "Ignore the whispers (Leave)"
+}])

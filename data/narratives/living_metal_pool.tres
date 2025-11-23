@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "living_metal_pool"
+dialogue_text = "A pool of liquid metal ripples with unnatural life. Veins of flesh-like tissue pulse beneath its surface, and you can feel warmth radiating from its depths. The metal seems to call to you, promising transformation. Ancient tools rest nearby - forge tongs that could shape this living substance into weaponry."
+choices = Array[Dictionary]([{
+"outcome_type": "grant_passive",
+"outcome_value": "self_repair",
+"text": "Drink from the pool"
+}, {
+"outcome_type": "grant_item",
+"outcome_value": "dented_metal_blade",
+"text": "Forge a weapon from the metal"
+}, {
+"outcome_type": "end",
+"outcome_value": "",
+"text": "Step away cautiously (Leave)"
+}])

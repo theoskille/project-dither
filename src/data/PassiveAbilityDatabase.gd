@@ -35,6 +35,9 @@ func _load_all_passives():
 	dir.list_dir_end()
 	print("PassiveAbilityDatabase: Loaded %d passive abilities" % _passives.size())
 
+func has_passive(passive_id: String) -> bool:
+	return _passives.has(passive_id)
+
 func get_passive(passive_id: String) -> PassiveAbilityData:
 	return _passives.get(passive_id)
 

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/EncounterData.gd" id="1_encounter"]
+
+[resource]
+script = ExtResource("1_encounter")
+encounter_id = "narrative_whispering_machinery"
+encounter_type = "narrative"
+enemy_configs = Array[Dictionary]([])
+narrative_id = "whispering_machinery"

@@ -26,7 +26,12 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 		"foundry_8_forge_warden"
 	]
 	var shop_encounters = ["shop_encounter"]
-	var narrative_encounters = ["narrative_shrine", "narrative_merchant"]
+	var narrative_encounters = [
+		"narrative_forge_sentinel",
+		"narrative_memory_core",
+		"narrative_living_metal_pool",
+		"narrative_whispering_machinery"
+	]
 
 	# Spawn probabilities for random encounters (shops are guaranteed separately)
 	var combat_chance = 0.65      # 65% chance for combat
@@ -208,6 +213,26 @@ func generate_grid_dungeon(rows: int = 5, cols: int = 5, fill_percentage: float 
 			rooms_dict[shop_rooms[i]].encounter_id = ""
 
 	print("DungeonEngine: Final shop count: %d" % min(shop_rooms.size(), 2))
+
+	# Step 6: Guarantee narrative encounter in first adjacent room (second room - for testing)
+	var adjacent_positions = [
+		Vector2i(0, 1),   # South
+		Vector2i(0, -1),  # North
+		Vector2i(1, 0),   # East
+		Vector2i(-1, 0)   # West
+	]
+
+	var first_adjacent_room_id = ""
+	for adj_pos in adjacent_positions:
+		var potential_room_id = "room_%d_%d" % [adj_pos.y, adj_pos.x]
+		if rooms_dict.has(potential_room_id):
+			first_adjacent_room_id = potential_room_id
+			break
+
+	if first_adjacent_room_id != "":
+		var narrative_index = randi() % narrative_encounters.size()
+		rooms_dict[first_adjacent_room_id].encounter_id = narrative_encounters[narrative_index]
+		print("DungeonEngine: Guaranteed narrative '%s' in second room '%s'" % [narrative_encounters[narrative_index], first_adjacent_room_id])
 
 	# Initialize dungeon state via mutations
 	DungeonStateMutations.set_rooms(rooms_dict)

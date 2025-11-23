@@ -51,7 +51,7 @@ func _build_ui():
 	var title = Label.new()
 	title.text = "NARRATIVE ENCOUNTER"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_font_size_override("font_size", 160)
 	title.custom_minimum_size = Vector2(0, 48)
 	main_vbox.add_child(title)
 
@@ -74,7 +74,7 @@ func _build_ui():
 
 	_dialogue_label = Label.new()
 	_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_dialogue_label.add_theme_font_size_override("font_size", 16)
+	_dialogue_label.add_theme_font_size_override("font_size", 96)
 	_dialogue_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_scroll.add_child(_dialogue_label)
 
@@ -119,7 +119,7 @@ func _update_display():
 		var choice_button = Button.new()
 		choice_button.text = choice.get("text", "Choice %d" % (i + 1))
 		choice_button.custom_minimum_size = Vector2(0, 50)
-		choice_button.add_theme_font_size_override("font_size", 16)
+		choice_button.add_theme_font_size_override("font_size", 80)
 
 		# Connect button to choice handler with index
 		choice_button.pressed.connect(_on_choice_pressed.bind(i))

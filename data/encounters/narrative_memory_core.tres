@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_encounter")
-encounter_id = "narrative_shrine"
+encounter_id = "narrative_memory_core"
 encounter_type = "narrative"
 enemy_configs = Array[Dictionary]([])
-narrative_id = "mysterious_shrine"
+narrative_id = "memory_core"

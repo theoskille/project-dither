@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NarrativeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/NarrativeData.gd" id="1_narrative"]
+
+[resource]
+script = ExtResource("1_narrative")
+narrative_id = "memory_core"
+dialogue_text = "You discover a crystalline sphere embedded in living metal conduits. Data streams pulse through translucent flesh-like membranes. The core contains ancient knowledge - combat protocols, energy reserves, and something deeper. The deep archives are locked behind aggressive security constructs."
+choices = Array[Dictionary]([{
+"outcome_type": "grant_passive",
+"outcome_value": "scrap_armor",
+"text": "Download combat protocols"
+}, {
+"outcome_type": "grant_item",
+"outcome_value": "energized_core_fragment",
+"text": "Extract stored energy"
+}, {
+"outcome_type": "trigger_combat",
+"outcome_value": "foundry_2_slag_hauler",
+"text": "Breach deep archives (Risk)"
+}])
