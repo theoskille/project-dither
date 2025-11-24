@@ -16,7 +16,7 @@ base_stats = {
 "spd": 10,
 "luck": 7
 }
-equipped_attacks = Array[String](["molten_spray", "slash"])
+equipped_attacks = Array[String](["molten_spray", "strike"])
 passive_abilities = Array[String](["molten_aura"])
 sprite_path = ""
 xp_reward = 50

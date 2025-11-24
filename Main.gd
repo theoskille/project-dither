@@ -425,7 +425,7 @@ func _on_dungeon_completed():
 	dungeon_victory_screen.continue_exploring_pressed.connect(_on_dungeon_victory_continue_pressed)
 
 func _on_dungeon_victory_main_menu_pressed():
-	print("Main: Dungeon victory - returning to main menu (restarting dungeon)")
+	print("Main: Dungeon victory - returning to main menu")
 
 	# Remove dungeon victory screen
 	if dungeon_victory_screen:
@@ -433,9 +433,8 @@ func _on_dungeon_victory_main_menu_pressed():
 		dungeon_victory_screen.queue_free()
 		dungeon_victory_screen = null
 
-	# Restart dungeon (in a real game, this would go to main menu)
-	DungeonEngine.start_dungeon("foundry_dungeon")
-	_switch_to_dungeon_view()
+	# Return to title screen
+	_show_title_screen()
 
 func _on_dungeon_victory_continue_pressed():
 	print("Main: Dungeon victory - continuing exploration")

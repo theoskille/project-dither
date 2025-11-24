@@ -16,7 +16,7 @@ base_stats = {
 "spd": 9,
 "luck": 8
 }
-equipped_attacks = Array[String](["slash", "scrap_barrage"])
+equipped_attacks = Array[String](["strike", "scrap_barrage"])
 passive_abilities = Array[String]([])
 sprite_path = ""
 xp_reward = 45
