@@ -32,7 +32,7 @@ func initialize_enemies(enemy_configs: Array):
 	for i in range(enemies.size()):
 		_update_entity_dodge_chance("enemy_%d" % i)
 
-func execute_move(action_data: ActionData, caster: String, target: String) -> bool:
+func execute_move(action_data: ActionData, caster: String, target: String, direction: int = 0) -> bool:
 	if not can_execute_action(action_data, caster, target):
 		return false
 
@@ -50,12 +50,12 @@ func execute_move(action_data: ActionData, caster: String, target: String) -> bo
 			BattleStateMutations.set_entity_hp(caster, new_hp)
 			print("CombatEngine: %s took %d self-damage from using %s" % [caster, action_data.damage_caster, action_data.action_name])
 
-	return _perform_action(action_data, caster, target)
+	return _perform_action(action_data, caster, target, direction)
 
 func execute_move_legacy(move_data: Dictionary, caster: String, target: String):
 	return _perform_action_legacy(move_data, caster, target)
 
-func _perform_action(action_data: ActionData, caster_id: String, target_id: String) -> bool:
+func _perform_action(action_data: ActionData, caster_id: String, target_id: String, direction: int = 0) -> bool:
 	# Check if attack hits (only for damage-dealing actions)
 	var attack_hits = true
 	if action_data.base_damage > 0 or _has_damage_modifiers(action_data):
@@ -115,12 +115,17 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 			# Get target position if available (for directional movement like dash_strike)
 			var target_pos = target_entity.position if target_entity else -1
 
+			# Apply direction to movement distance if direction was specified
+			var movement_distance = action_data.move_caster
+			if direction != 0:
+				movement_distance = abs(action_data.move_caster) * direction
+
 			# Use MovementEngine to resolve movement
 			var movement_result = MovementEngine.resolve_movement(
 				caster_id,
 				action_data.movement_type,
 				caster_entity.position,
-				action_data.move_caster,
+				movement_distance,
 				max_position,
 				target_pos,
 				action_data.stop_on_collision
@@ -181,10 +186,10 @@ func _perform_action(action_data: ActionData, caster_id: String, target_id: Stri
 
 		if caster_entity and target_entity:
 			# Calculate direction: positive if target is to the right, negative if to the left
-			var direction = sign(target_entity.position - caster_entity.position)
+			var target_direction = sign(target_entity.position - caster_entity.position)
 
 			# Apply relative movement: positive move_target = away from caster, negative = toward caster
-			var new_pos = clamp(target_entity.position + (action_data.move_target * direction), 0, max_position)
+			var new_pos = clamp(target_entity.position + (action_data.move_target * target_direction), 0, max_position)
 			BattleStateMutations.set_entity_position(target_id, new_pos)
 
 	if action_data.applies_effect_id != "":

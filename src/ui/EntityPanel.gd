@@ -25,6 +25,7 @@ var effects_container: VBoxContainer
 var passives_title: Label
 var passives_container: VBoxContainer
 var target_selection_panel: VBoxContainer = null
+var direction_selection_panel: VBoxContainer = null
 var pending_action_id: String = ""
 
 func _ready():
@@ -462,13 +463,26 @@ func _update_buttons():
 func _on_action_button_pressed(action_id: String):
 	var action = AttackDatabase.get_action(action_id)
 	if not action:
+		print("EntityPanel ERROR: Could not load action '%s'" % action_id)
 		return
+
+	# DEBUG: Check property values
+	print("EntityPanel [%s]: action_id='%s', targets_self=%s, requires_direction=%s" % [entity_name, action_id, action.targets_self, action.requires_direction])
 
 	# If action targets self, execute immediately without target selection
 	if action.targets_self:
+		print("EntityPanel: Executing self-targeting action for %s" % entity_name)
 		CombatEngine.execute_move(action, entity_name, entity_name)
 		return
 
+	# If action requires direction, show direction selection panel
+	if action.requires_direction:
+		print("EntityPanel: Showing direction selection for %s" % entity_name)
+		pending_action_id = action_id
+		_show_direction_selection(action)
+		return
+
+	print("EntityPanel: Showing target selection for %s" % entity_name)
 	pending_action_id = action_id
 	_show_target_selection(action)
 
@@ -528,12 +542,66 @@ func _on_target_selection_cancelled():
 	_set_action_buttons_visible(true)
 	pending_action_id = ""
 
-func _set_action_buttons_visible(visible: bool):
+func _show_direction_selection(_action: ActionData):
+	# Create direction selection panel if it doesn't exist
+	if direction_selection_panel == null:
+		# Create a centered panel container for the overlay
+		var overlay_panel = PanelContainer.new()
+		overlay_panel.custom_minimum_size = Vector2(300, 200)
+
+		# Position it in the center of the screen
+		overlay_panel.anchor_left = 0.5
+		overlay_panel.anchor_top = 0.5
+		overlay_panel.anchor_right = 0.5
+		overlay_panel.anchor_bottom = 0.5
+		overlay_panel.offset_left = -150  # Half of width
+		overlay_panel.offset_top = -100   # Half of height
+		overlay_panel.offset_right = 150
+		overlay_panel.offset_bottom = 100
+		overlay_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		overlay_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+		direction_selection_panel = VBoxContainer.new()
+		direction_selection_panel.set_script(preload("res://src/ui/DirectionSelectionPanel.gd"))
+		direction_selection_panel.direction_selected.connect(_on_direction_selected)
+		direction_selection_panel.cancelled.connect(_on_direction_selection_cancelled)
+		overlay_panel.add_child(direction_selection_panel)
+
+		# Add to root Main scene to display as overlay
+		get_tree().root.get_node("Main").add_child(overlay_panel)
+
+	# Show the overlay
+	direction_selection_panel.get_parent().visible = true
+
+	# Hide action buttons while selecting
+	_set_action_buttons_visible(false)
+
+func _on_direction_selected(direction: int):
+	if direction_selection_panel:
+		direction_selection_panel.get_parent().visible = false
+
+	_set_action_buttons_visible(true)
+
+	# Execute the action with direction
+	var action = AttackDatabase.get_action(pending_action_id)
+	if action:
+		CombatEngine.execute_move(action, entity_name, entity_name, direction)
+
+	pending_action_id = ""
+
+func _on_direction_selection_cancelled():
+	if direction_selection_panel:
+		direction_selection_panel.get_parent().visible = false
+
+	_set_action_buttons_visible(true)
+	pending_action_id = ""
+
+func _set_action_buttons_visible(buttons_visible: bool):
 	for button in action_buttons:
-		button.visible = visible
-	move_forward_button.visible = visible
-	move_backward_button.visible = visible
-	done_turn_button.visible = visible
+		button.visible = buttons_visible
+	move_forward_button.visible = buttons_visible
+	move_backward_button.visible = buttons_visible
+	done_turn_button.visible = buttons_visible
 
 func _on_move_forward_pressed():
 	var action = AttackDatabase.get_action("move_forward")

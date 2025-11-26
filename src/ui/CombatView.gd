@@ -84,5 +84,5 @@ func _build_ui():
 	bottom_hbox.add_child(enemy_grid_display)
 
 func _connect_signals():
-	# No signals to connect - EntityActionPanels handle their own signals
+	# No signals to connect - EntityPanels handle their own signals
 	pass
